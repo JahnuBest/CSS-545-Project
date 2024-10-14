@@ -12,6 +12,9 @@ Learning Flutter.io from scratch for the purpose of cross-platform development i
 
 A game-based project is suggested to revive my interest in mobile development.
 
+Project Summary:
+"Planet City Builder" is a space-based, procedural city-builder video game where players design and manage cities across unique planets. Harness planetary resources, zone cities, and conquer hostile environments to create a sprawling network of civilizations. Watch your cities grow from humble beginnings into thriving hubs. By combining space exploration and city-building, this game will offer an immersive experience for those seeking strategy and the challenge of simulated, interplanetary expansion.
+
 Value Proposition:
 The space exploration and city-building genres are both well-established, so the primary goal of Planet City Builder (PCB) is not to reinvent these genres or attempt to solve perceived shortcomings in past games. Instead, PCB aims to carve out a unique space by addressing unmet demand. It follows a common industry trend where games released in saturated markets succeed by tapping into niche opportunities. PCB seeks to blend space exploration and city-building in a way that hasn’t been perfected before. Many games in these genres tend to become repetitive or overly drawn out after extended play, but PCB is designed to offer a fresh and engaging experience that can captivate players for hundreds of hours across multiple playthroughs. Additionally, PCB emphasizes user-friendly mechanics to ensure that building a vast galactic empire remains accessible and enjoyable from beginning to end.
 
@@ -27,9 +30,6 @@ The primary goal of PCB is to deliver a positive play experience that captivates
 2. Average hours played
 3. Total sales
 4. Average concurrent players
-
-Project Summary:
-"Planet City Builder" is a space-based, procedural city-builder video game where players design and manage cities across unique planets. Harness planetary resources, zone cities, and conquer hostile environments to create a sprawling network of civilizations. Watch your cities grow from humble beginnings into thriving hubs. By combining space exploration and city-building, this game will offer an immersive experience for those seeking strategy and the challenge of simulated, interplanetary expansion.
 
 Competitor Analysis:
 This analysis evaluates two games with elements similar to PCB that have achieved success in the gaming industry.
@@ -77,4 +77,3 @@ Challenges and Open Questions
 The overarching technical challenge will be my ability to acquire the necessary skills to complete the MVP in Unreal Engine 5 and successfully port the game to at least one mobile platform by the final presentation deadline. While a poorly performing game is better than no game at all, it would still be a substantial issue. Thus, the primary challenge lies in balancing on-the-job learning with the creation of a playable and enjoyable product that minimizes lag.
 
 More specific challenges include understanding relevant procedural algorithms, mastering techniques for optimizing assets for mobile devices, and adapting to node-based programming after experience with Python and Godot. Although addressing these issues will require time and support, the question remains: will PCB be fun to play even in its MVP form? Prioritizing the rapid development of a functional prototype is crucial to maximizing the game's chances of success while effectively tackling the aforementioned challenges.
-
