@@ -29,7 +29,7 @@ class HomePage extends StatelessWidget {
           child: Column (
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Text('Click this button to go to the Second Page'),
+              const Text('Click this button to load an image'),
               const SizedBox(height: 20),
               ElevatedButton(onPressed: () {
               Navigator.push(

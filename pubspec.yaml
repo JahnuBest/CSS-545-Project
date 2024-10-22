@@ -1,7 +1,7 @@
 name: cs_545_jahnu_best
-description: "A new Flutter project."
+description: "CS 545 Jahnu Best."
 publish_to: 'none'
-version: 0.1.0
+version: 0.1.1
 
 environment:
   sdk: ^3.5.3
@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  path_provider: ^2.0.0
+  permission_handler: ^11.0.0
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:

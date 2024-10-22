@@ -1,0 +1,10 @@
+There are several methods of storing and accessing local media with Flutter. 
+path_provider allows a user to load media if the path of the media is known, but doesn't work well if the media isn't cached or the location isn't known.
+file_picker is an alternate to path_provider where a file can be located, stored, and used if the location was not known before, but requires more intervention from the user.
+One can also conceivably store media files in an assets folder and bundle them with the app. This increases app size, but doesn't require the app to ask for permission to access storage.
+There are other techniques like SQL Lite (for "storing" large amounts of media, but can be tough to set up), 
+or cached_network_image (https://pub.dev/packages/cached_network_image) which can cache images downloaded from the internet (but can only store images).
+This document outlines the pros and cons of various techniques to store and display media to a user with Flutter and Dart.
+
+The example code implements both a one-time permission request to access storage (checks every time)
+and a display of an image that is loaded and stored locally, using file_picker. (The image does not currently persist across screens.)
