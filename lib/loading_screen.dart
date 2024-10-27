@@ -9,7 +9,9 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
   late RectangleComponent progressBar;
   late RectangleComponent progressBarFill;
   late TextComponent titleText;
+  double fadeOpacity = 1.0;
   double progress = 0.0;
+  bool fadeOut = false;
 
   @override
   Future<void> onLoad() async {
@@ -61,15 +63,42 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
     }
   }
 
+  void applyFadeEffect(double opacity) {
+    final fadedPaint = Paint()..color = Colors.white.withOpacity(opacity);
+
+    background.paint = fadedPaint;
+    titleText.textRenderer = TextPaint(
+      style: TextStyle(
+        fontFamily: 'GameOfSquids',
+        color: Colors.white.withOpacity(opacity),
+        fontSize: 32,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+    //progressBar.paint = fadedPaint;
+    //progressBarFill.paint = fadedPaint;
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
-    progress += dt * 0.2;
-    if (progress >= 1.0) {
-      removeFromParent();
-      add(MainGameScreen());
+    if (!fadeOut) {
+      progress += dt * 0.5;
+      if (progress >= 1.0) {
+        fadeOut = true;
+        progressBar.removeFromParent();
+        progressBarFill.removeFromParent();
+      } else {
+        progressBarFill.size.x = progressBar.size.x * progress;
+      }
     } else {
-      progressBarFill.size.x = progressBar.size.x * progress;
+      fadeOpacity -= dt * 2;
+      applyFadeEffect(fadeOpacity);
+      if (fadeOpacity <= 0) {
+        fadeOpacity = 0;
+        removeFromParent(); 
+        add(MainGameScreen());
+      }
     }
   }
 }
