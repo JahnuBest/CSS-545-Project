@@ -1,4 +1,4 @@
-name: cs_545_jahnu_best
+name: planet_city_builder
 description: "CS 545 Jahnu Best."
 publish_to: 'none'
 version: 0.1.1
@@ -25,5 +25,6 @@ flutter:
     - family: GameOfSquids
       fonts:
         - asset: assets/fonts/Game_Of_Squids.ttf
+        - asset: assets/fonts/Cartesian.ttf
   assets:
     - assets/images/loading_background_img.jpeg

@@ -1,5 +1,6 @@
-import 'package:cs_545_jahnu_best/game_screen.dart';
-import 'package:cs_545_jahnu_best/main.dart';
+import 'package:planet_city_builder/game_screen.dart';
+import 'package:planet_city_builder/main.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flame/palette.dart';
@@ -63,6 +64,7 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
     }
   }
 
+  
   void applyFadeEffect(double opacity) {
     final fadedPaint = Paint()..color = Colors.white.withOpacity(opacity);
 
@@ -78,27 +80,29 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
     //progressBar.paint = fadedPaint;
     //progressBarFill.paint = fadedPaint;
   }
+  
 
   @override
   void update(double dt) {
     super.update(dt);
     if (!fadeOut) {
-      progress += dt * 0.5;
       if (progress >= 1.0) {
         fadeOut = true;
         progressBar.removeFromParent();
         progressBarFill.removeFromParent();
-      } else {
+      }
+      else {
+        progress += dt * 2;
         progressBarFill.size.x = progressBar.size.x * progress;
       }
     } else {
       fadeOpacity -= dt * 2;
-      applyFadeEffect(fadeOpacity);
+      //applyFadeEffect(fadeOpacity);
       if (fadeOpacity <= 0) {
         fadeOpacity = 0;
-        removeFromParent(); 
-        add(MainGameScreen());
+        //game.router.remove(this);
+        game.router.pushNamed('maingame');
       }
     }
-  }
+  } 
 }
