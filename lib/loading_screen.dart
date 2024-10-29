@@ -80,7 +80,7 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
     //progressBar.paint = fadedPaint;
     //progressBarFill.paint = fadedPaint;
   }
-  
+
 
   @override
   void update(double dt) {

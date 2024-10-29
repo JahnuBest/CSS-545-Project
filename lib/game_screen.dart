@@ -1,3 +1,4 @@
+import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/input.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,7 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
     addAll([
       cityNameComponent,   // Clickable text box for renaming city
       cityPopulationComponent,   // Non-clickable text box for population
+      PauseButton(),
     ]);
     //camera = CameraComponent(world: this, viewport: FixedResolutionViewport(Vector2(800, 600)));
   }
@@ -261,4 +263,127 @@ class CityPopulationComponent extends TextComponent {
       text = 'Population: $population';
     }
   }
+}
+
+/*
+
+class PauseRoute extends Route {
+  PauseRoute() : super()
+
+  @override
+  void onPush(Route? previousRoute) {
+    previousRoute!
+      ..stopTime()
+      ..addRenderEffect(
+      );
+  }
+
+  @override
+  void onPop(Route nextRoute) {
+    nextRoute
+      ..resumeTime()
+      ..removeRenderEffect();
+  }
+}
+*/
+abstract class SimpleButton extends PositionComponent with TapCallbacks {
+  SimpleButton(this._iconPath, {super.position}) : super(size: Vector2.all(40));
+
+  final Paint _borderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = const Color(0x66ffffff);
+  final Paint _iconPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..color = const Color(0xffaaaaaa)
+    ..strokeWidth = 7;
+  final Path _iconPath;
+
+  void action();
+
+  @override
+  void render(Canvas canvas) {
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(size.toRect(), const Radius.circular(8)),
+      _borderPaint,
+    );
+    canvas.drawPath(_iconPath, _iconPaint);
+  }
+
+  @override
+  void onTapDown(TapDownEvent event) {
+    _iconPaint.color = const Color(0xffffffff);
+  }
+
+  @override
+  void onTapUp(TapUpEvent event) {
+    _iconPaint.color = const Color(0xffaaaaaa);
+    action();
+  }
+
+  @override
+  void onTapCancel(TapCancelEvent event) {
+    _iconPaint.color = const Color(0xffaaaaaa);
+  }
+}
+
+class BackButton extends SimpleButton with HasGameReference<PlanetCityBuilder> {
+  BackButton()
+      : super(
+          Path()
+            ..moveTo(22, 8)
+            ..lineTo(10, 20)
+            ..lineTo(22, 32)
+            ..moveTo(12, 20)
+            ..lineTo(34, 20),
+          position: Vector2.all(10),
+        );
+
+  @override
+  void action() => game.router.pop();
+}
+
+
+class PauseButton extends SimpleButton with HasGameReference<PlanetCityBuilder> {
+  PauseButton()
+      : super(
+          Path()
+            ..moveTo(14, 10)
+            ..lineTo(14, 30)
+            ..moveTo(26, 10)
+            ..lineTo(26, 30),
+          position: Vector2(60, 10),
+        );
+  @override
+  void action() => game.router.pushNamed('pause');
+}
+
+class PausePage extends Component
+    with TapCallbacks, HasGameReference<PlanetCityBuilder> {
+  @override
+  Future<void> onLoad() async {
+    final game = findGame()!;
+    addAll([
+      TextComponent(
+        text: 'PAUSED',
+        position: game.canvasSize / 2,
+        anchor: Anchor.center,
+        children: [
+          ScaleEffect.to(
+            Vector2.all(1.1),
+            EffectController(
+              duration: 0.3,
+              alternate: true,
+              infinite: true,
+            ),
+          ),
+        ],
+      ),
+    ]);
+  }
+
+  @override
+  bool containsLocalPoint(Vector2 point) => true;
+
+  @override
+  void onTapUp(TapUpEvent event) => game.router.pop();
 }

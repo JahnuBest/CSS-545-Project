@@ -24,7 +24,14 @@ flutter:
   fonts:
     - family: GameOfSquids
       fonts:
-        - asset: assets/fonts/Game_Of_Squids.ttf
-        - asset: assets/fonts/Cartesian.ttf
+      - asset: assets/fonts/Game_Of_Squids.ttf
+
+    - family: Cartesian
+      fonts:
+      - asset: assets/fonts/Cartesian.ttf
+      
   assets:
     - assets/images/loading_background_img.jpeg
+    - assets/images/mars_planet.png
+    - assets/images/ice_planet.png
+    - assets/images/fire_planet.png

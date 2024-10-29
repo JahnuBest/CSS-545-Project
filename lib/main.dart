@@ -1,5 +1,6 @@
 import 'package:planet_city_builder/loading_screen.dart';
 import 'package:planet_city_builder/game_screen.dart';
+import 'package:planet_city_builder/planet_select_screen.dart';
 import 'package:flutter/material.dart' hide Route;
 import 'package:flame/game.dart';
 //import 'package:flame/components.dart';
@@ -24,7 +25,9 @@ class PlanetCityBuilder extends FlameGame {
       router = RouterComponent(
         routes: {
           'loading': Route(LoadingScreen.new),
+          'planetselect': Route(PlanetSelectScreen.new),
           'maingame': Route(MainGameScreen.new),
+          //'pause': PauseRoute(),
         },
         initialRoute: 'loading',
       ),
