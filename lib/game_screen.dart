@@ -9,6 +9,7 @@ import 'package:planet_city_builder/game_components/zone.dart';
 import 'dart:math';
 
 class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
+  late CameraComponent camera;
   late CityNameComponent cityNameComponent = CityNameComponent();
   late CityPopulationComponent cityPopulationComponent = CityPopulationComponent();
 
@@ -16,7 +17,14 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   //final TextEditingController _controller = TextEditingController();
 
   List<Zone> zones = [];
+  Map demand = <ZoneType, double>{
+    ZoneType.residential:0.0,
+    ZoneType.commercial:0.0,
+    ZoneType.industrial:0.0
+  };
+  final Random rng = Random();
   final double initialZoneRadius = 50;
+  
   final Vector2 defaultZoneSize = Vector2(150,150);
 
   MainGameScreen() {
@@ -24,14 +32,53 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
       cityNameComponent,   // Clickable text box for renaming city
       cityPopulationComponent,   // Non-clickable text box for population
     ]);
+    //camera = CameraComponent(world: this, viewport: FixedResolutionViewport(Vector2(800, 600)));
   }
 
+/*
+  @override
+  void onDragUpdate(DragUpdateEvent event) {
+    // Move the camera position based on drag delta
+    camera.viewfinder.moveBy(-event.localDelta);
+  }
+  */
   @override
   void update(double dt) {
     super.update(dt);
 
     if (zones.isEmpty) {
       _initializeZones();
+    }
+    for (ZoneType ztd in demand.keys) {
+      demand[ztd] += rng.nextDouble() * dt * 0.002;
+      demand[ztd] = demand[ztd].clamp(0.0, 1.0);
+      if (rng.nextDouble() < demand[ztd]) {
+        var zoneTypeList = getZonesType(ztd);
+        zoneTypeList = zoneTypeList.where((zone) => zone.zoneSlots.isNotEmpty).toList(); //Only include zones with available spots
+        if (zoneTypeList.isNotEmpty) {
+          zoneTypeList[rng.nextInt(zoneTypeList.length)].generateBuildings();
+        } else {
+          //Generate new zone of demanded type, for now placement is random
+          Vector2 position;
+          Zone existingZone = zones[Random().nextInt(zones.length)];
+          position = getAdjacentPosition(existingZone.position, defaultZoneSize);
+          Zone newZone = Zone(ztd, position, defaultZoneSize);
+          zones.add(newZone);
+          add(newZone);
+        }
+        demand[ztd] = 0.0;
+      }
+    }
+    
+
+    for (var zone in zones) {
+      for (var building in zone.buildings){
+        if (building.popIncrease > 0) {
+          cityPopulationComponent.population += building.popIncrease;
+          //print("Increased pop by ${building.popIncrease}");
+          building.popIncrease = 0;
+        }
+      }
     }
   }
 
@@ -43,17 +90,12 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
       if (zones.isEmpty){
         position = center + getRandomOffset(initialZoneRadius);
       } else {
-        int count = 0;
         //List<Zone> possibleZones = zones; 
-        do {
-          Zone existingZone = zones[Random().nextInt(zones.length)];
-          position = getAdjacentPosition(existingZone.position, defaultZoneSize);
-          count++;
+        Zone existingZone = zones[Random().nextInt(zones.length)];
+        position = getAdjacentPosition(existingZone.position, defaultZoneSize);
           //possibleZones.remove(existingZone); //Ensures we don't check the same zone twice
-        }
-        while (!isOverlapping(position) && count < 10);
       }
-      Zone newZone = Zone(type: zoneType, position: position, size: defaultZoneSize);
+      Zone newZone = Zone(zoneType, position, defaultZoneSize);
       zones.add(newZone);
       add(newZone); 
     }
@@ -96,8 +138,8 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
     }
   }
 
-  int getZoneCount(ZoneType type) {
-    return zones.where((zone) => zone.type == type).length;
+  List<Zone> getZonesType(ZoneType type) {
+    return zones.where((zone) => zone.type == type).toList();
   }
 }
 
@@ -204,7 +246,7 @@ class CityPopulationComponent extends TextComponent {
 
   int population;
   @override
-  int priority = 99;
+  int priority = 99;  
 
   @override
   void onGameResize(Vector2 size) {
@@ -215,15 +257,8 @@ class CityPopulationComponent extends TextComponent {
   @override
   void update(double dt) {
     super.update(dt);
-    final currentText = 'Population: $population';
-    if (text != currentText) {
-      text = currentText;
-    }
-  }
-
-  void setPopulation(int newPopulation) {
-    if (population != newPopulation) {
-      population = newPopulation;
+    if (text != 'Population: $population') {
+      text = 'Population: $population';
     }
   }
 }
