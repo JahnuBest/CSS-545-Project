@@ -11,15 +11,14 @@ class Building extends PositionComponent{
   late Vector2 zonePos;
   final Random rng = Random();
 
+  Paint paint = Paint()..color = Colors.black;
+
   Building(Vector2 position) {
     size = boxSize;
     anchor = Anchor.center;
     this.position = position;
     //print("Adding a building at position (${position.x}, ${position.y})");
   }
-
-  @override
-  int priority = 50;
 
   @override
   void update(double dt) {
@@ -32,7 +31,6 @@ class Building extends PositionComponent{
   /*
   @override
   void render(Canvas canvas) {
-    final paint = Paint()..color = Colors.black;
     canvas.drawRect(size.toRect(), paint);
   }
   */

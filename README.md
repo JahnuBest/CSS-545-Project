@@ -29,6 +29,9 @@ Disparity between Prototype and MVP:
         Add budget/expenses panel 
         Each city should generate X specific resources for export (track with variables)
             More extreme planets are more expensive to build/maintain, but over time export more valuable resources
+    Sound Effects/Music
+        Aid with immersion
+        Relatively simple to implement; difficult to assemble
 
 The generic goals of the game are for the player to feel curious to continue finding new planets to habitat and express their creativity through the founding and expansion of different cities.
 

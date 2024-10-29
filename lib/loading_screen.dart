@@ -17,7 +17,7 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
   @override
   Future<void> onLoad() async {
     background = SpriteComponent()
-      ..sprite = await Sprite.load('loading_background_img.jpeg');
+      ..sprite = await Sprite.load('loading_background_img_3.jpg');
 
     background.size = calculateBackgroundSize(background.sprite!.originalSize);
     background.anchor = Anchor.center;
@@ -92,13 +92,15 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
         progressBarFill.removeFromParent();
       }
       else {
-        progress += dt * 2;
+        progress += dt * 0.5;
         progressBarFill.size.x = progressBar.size.x * progress;
       }
     } else {
       fadeOpacity -= dt * 2;
-      //applyFadeEffect(fadeOpacity);
-      if (fadeOpacity <= 0) {
+      if (fadeOpacity > 0){
+        applyFadeEffect(fadeOpacity);
+      }
+      else {
         fadeOpacity = 0;
         //game.router.remove(this);
         game.router.pushNamed('maingame');

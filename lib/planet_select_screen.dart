@@ -11,10 +11,9 @@ class PlanetSelectScreen extends Component with HasGameRef<PlanetCityBuilder> {
   late Vector2 centerPosition; // Centered position for focused planet
   Offset offset = Offset.zero;
 
-  PlanetSelectScreen() {
-    centerPosition = Vector2(gameRef.size.x / 2, gameRef.size.y);
-  }
-
+  PlanetSelectScreen() : centerPosition = Vector2(300, 400);
+  
+  //centerPosition = Vector2(gameRef.size.x / 2, gameRef.size.y); 
 
   @override
   Future<void> onLoad() async {
@@ -79,12 +78,11 @@ class PlanetSelectScreen extends Component with HasGameRef<PlanetCityBuilder> {
       Rect.fromLTWH(0, 0, gameRef.size.x, gameRef.size.y),
       paint,
     );
-/*
+
     for (final planet in planets) {
       final centerX = gameRef.size.x / 2 + offset.dx + planets.indexOf(planet) * gameRef.size.x;
-      planet.renderAt(canvas, Offset(centerX, gameRef.size.y / 2));
+      planet.render(canvas);
     }
-    */
   }
   
 }
@@ -96,6 +94,7 @@ class Planet extends PositionComponent with HasGameRef<PlanetCityBuilder>{
 
   Planet({required this.imagePath, required Vector2 position}) {
     this.position = position;
+    //print(position);
   }
 
   @override
@@ -103,20 +102,22 @@ class Planet extends PositionComponent with HasGameRef<PlanetCityBuilder>{
     sprite = await Sprite.load(imagePath);
   }
 /*
-  void renderAt(Canvas canvas, Offset offset) {
+  @override
+  void render(Canvas canvas) {
     final targetHeight = gameRef.size.y / 2;
   
-    // Calculate the scale factor to maintain the aspect ratio
     final scale = isFocused ? (targetHeight / sprite.srcSize.y) * 1.2 : targetHeight / sprite.srcSize.y;
     final scaledSize = Vector2(sprite.srcSize.x * scale, targetHeight / sprite.srcSize.y);
 
-    // Center the planet horizontally
     final offsetPosition = offset + Offset(scaledSize.x / 2, scaledSize.y / 2);
 
     // Draw the scaled sprite at the centered position
-    sprite.renderRect(
+    sprite.render(
       canvas,
-      Rect.fromLTWH(offsetPosition.dx, offsetPosition.dy, scaledSize.x, scaledSize.y),
+      Rect.fromCenter(center: center, width: width, height: height)
+      center: Vector2(offsetPosition),
+      size: scaledSize,
+      //Rect.fromLTWH(offsetPosition.dx, offsetPosition.dy, scaledSize.x, scaledSize.y),
     );
   }
   */

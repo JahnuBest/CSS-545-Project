@@ -25,9 +25,9 @@ class PlanetCityBuilder extends FlameGame {
       router = RouterComponent(
         routes: {
           'loading': Route(LoadingScreen.new),
-          'planetselect': Route(PlanetSelectScreen.new),
+          //'planetselect': Route(PlanetSelectScreen.new),
           'maingame': Route(MainGameScreen.new),
-          //'pause': PauseRoute(),
+          'pause': PauseRoute(),
         },
         initialRoute: 'loading',
       ),

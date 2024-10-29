@@ -1,18 +1,21 @@
 import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/input.dart';
-import 'package:flutter/material.dart';
+import 'package:flame/rendering.dart';
+import 'package:flutter/material.dart' hide Route;
 import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
 import 'package:flame/palette.dart';
 import 'package:planet_city_builder/main.dart';
 import 'package:planet_city_builder/game_components/zone.dart';
+import 'package:flame/game.dart';
 import 'dart:math';
 
 class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   late CameraComponent camera;
   late CityNameComponent cityNameComponent = CityNameComponent();
   late CityPopulationComponent cityPopulationComponent = CityPopulationComponent();
+  late SpriteComponent background;
 
   late OverlayEntry renameOverlay;
   //final TextEditingController _controller = TextEditingController();
@@ -25,18 +28,43 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   };
   final Random rng = Random();
   final double initialZoneRadius = 50;
-  
   final Vector2 defaultZoneSize = Vector2(150,150);
 
-  MainGameScreen() {
+  @override
+  Future<void> onLoad() async {
+    background = SpriteComponent()
+      ..sprite = await Sprite.load('mars_background.jpg');
+    background.size = calculateBackgroundSize(background.sprite!.originalSize);
+    background.anchor = Anchor.center;
+    background.position = gameRef.size / 2;
+    add(background);
     addAll([
       cityNameComponent,   // Clickable text box for renaming city
       cityPopulationComponent,   // Non-clickable text box for population
+      BackButton(),
       PauseButton(),
     ]);
-    //camera = CameraComponent(world: this, viewport: FixedResolutionViewport(Vector2(800, 600)));
   }
 
+  Vector2 calculateBackgroundSize(Vector2 originalSize) {
+    final screenAspectRatio = gameRef.size.x / gameRef.size.y;
+    final imageAspectRatio = originalSize.x / originalSize.y;
+    if (screenAspectRatio > imageAspectRatio) {
+      return Vector2(gameRef.size.x, gameRef.size.x / imageAspectRatio);
+    } else {
+      return Vector2(gameRef.size.y * imageAspectRatio, gameRef.size.y);
+    }
+  }
+/*
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    background.size = calculateBackgroundSize(background.sprite!.originalSize);
+    background.anchor = Anchor.center;
+    background.position = Vector2(size.x / 2, size.y - 50);  
+
+  }
+  */
 /*
   @override
   void onDragUpdate(DragUpdateEvent event) {
@@ -44,6 +72,21 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
     camera.viewfinder.moveBy(-event.localDelta);
   }
   */
+/*
+  @override
+  void render(Canvas canvas) {
+    background.render(canvas);
+    for (var zone in zones) {
+      zone.render(canvas);
+      for (var building in zone.buildings){
+        building.render(canvas);
+      }
+    }
+    cityNameComponent.render(canvas);
+    cityPopulationComponent.render(canvas);
+  }
+*/
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -163,8 +206,6 @@ class CityNameComponent extends PositionComponent with TapCallbacks, HasGameRef<
 
   String cityName = 'Capitol City';
   late TextComponent _textComponent;
-  @override
-  int priority = 100;
 
   @override
   void onGameResize(Vector2 size) {
@@ -247,8 +288,6 @@ class CityPopulationComponent extends TextComponent {
         );
 
   int population;
-  @override
-  int priority = 99;  
 
   @override
   void onGameResize(Vector2 size) {
@@ -265,27 +304,6 @@ class CityPopulationComponent extends TextComponent {
   }
 }
 
-/*
-
-class PauseRoute extends Route {
-  PauseRoute() : super()
-
-  @override
-  void onPush(Route? previousRoute) {
-    previousRoute!
-      ..stopTime()
-      ..addRenderEffect(
-      );
-  }
-
-  @override
-  void onPop(Route nextRoute) {
-    nextRoute
-      ..resumeTime()
-      ..removeRenderEffect();
-  }
-}
-*/
 abstract class SimpleButton extends PositionComponent with TapCallbacks {
   SimpleButton(this._iconPath, {super.position}) : super(size: Vector2.all(40));
 
@@ -342,7 +360,6 @@ class BackButton extends SimpleButton with HasGameReference<PlanetCityBuilder> {
   void action() => game.router.pop();
 }
 
-
 class PauseButton extends SimpleButton with HasGameReference<PlanetCityBuilder> {
   PauseButton()
       : super(
@@ -353,32 +370,40 @@ class PauseButton extends SimpleButton with HasGameReference<PlanetCityBuilder> 
             ..lineTo(26, 30),
           position: Vector2(60, 10),
         );
+
   @override
   void action() => game.router.pushNamed('pause');
 }
 
+class PauseRoute extends Route {
+  PauseRoute() : super(PausePage.new, transparent: true);
+
+  @override
+  void onPush(Route? previousRoute) {
+    previousRoute!
+      ..stopTime()
+      ..addRenderEffect(PaintDecorator.grayscale(opacity: 0.5)..addBlur(3.0));
+  }
+
+  @override
+  void onPop(Route nextRoute) {
+    nextRoute
+      ..resumeTime()
+      ..removeRenderEffect();
+  }
+}
+
 class PausePage extends Component
-    with TapCallbacks, HasGameReference<PlanetCityBuilder> {
+    with TapCallbacks, HasGameRef<PlanetCityBuilder> {
   @override
   Future<void> onLoad() async {
-    final game = findGame()!;
-    addAll([
+    add(
       TextComponent(
-        text: 'PAUSED',
-        position: game.canvasSize / 2,
+        text: 'Paused',
+        position: gameRef.canvasSize / 2,
         anchor: Anchor.center,
-        children: [
-          ScaleEffect.to(
-            Vector2.all(1.1),
-            EffectController(
-              duration: 0.3,
-              alternate: true,
-              infinite: true,
-            ),
-          ),
-        ],
       ),
-    ]);
+    );
   }
 
   @override

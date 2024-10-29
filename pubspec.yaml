@@ -31,7 +31,8 @@ flutter:
       - asset: assets/fonts/Cartesian.ttf
       
   assets:
-    - assets/images/loading_background_img.jpeg
+    - assets/images/loading_background_img_3.jpg
+    - assets/images/mars_background.jpg
     - assets/images/mars_planet.png
     - assets/images/ice_planet.png
     - assets/images/fire_planet.png

@@ -15,6 +15,7 @@ class Zone extends PositionComponent with DragCallbacks{
   //double demand = 0.0;
   final Random rng = Random();
   late Color baseColor;
+  late Paint paint;
 
   //Zone({required this.type, required Vector2 position, required Vector2 size}) : super(position: position, size: size);
   Zone(ZoneType zonetype, Vector2 position, Vector2 size){
@@ -22,6 +23,7 @@ class Zone extends PositionComponent with DragCallbacks{
     this.position = position;
     this.size = size;
     baseColor = _getBaseColor(type);
+    paint = Paint()..color = baseColor;
     const double margin = 12.5;
     zoneSlots = [
       position + Vector2(margin, margin),                      
@@ -54,12 +56,10 @@ class Zone extends PositionComponent with DragCallbacks{
         return Colors.yellow;
     }
   }
-
-  @override
-  int priority = 30;
   
   //demand.clamp(0.2, 1.0)
   Color get zoneColor => baseColor.withOpacity(0.5);
+  Paint get zonePaint => Paint()..color = zoneColor;
 
   void generateBuildings() {
     buildings.add(Building(zoneSlots.removeAt(rng.nextInt(zoneSlots.length))));
@@ -93,9 +93,7 @@ class Zone extends PositionComponent with DragCallbacks{
 
    @override
   void render(Canvas canvas) {
-    final color = zoneColor;
-    final paint = Paint()..color = color;
-    canvas.drawRect(size.toRect(), paint);
+    canvas.drawRect(size.toRect(), zonePaint);
     _zoneCount.render(canvas);
     /*
     for (final building in buildings) {
