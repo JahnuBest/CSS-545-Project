@@ -32,6 +32,7 @@ flutter:
       
   assets:
     - assets/images/loading_background_img_3.jpg
+    - assets/images/stars.jpg
     - assets/images/mars_background.jpg
     - assets/images/mars_planet.png
     - assets/images/ice_planet.png
