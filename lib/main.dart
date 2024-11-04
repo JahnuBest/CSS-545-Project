@@ -1,45 +1,36 @@
-import 'package:cs_545_jahnu_best/second_page.dart';
-import 'package:flutter/material.dart';
+import 'package:planet_city_builder/loading_screen.dart';
+import 'package:planet_city_builder/game_screen.dart';
+import 'package:planet_city_builder/planet_select_screen.dart';
+import 'package:flutter/material.dart' hide Route;
+import 'package:flame/game.dart';
+//import 'package:flame/components.dart';
+//import 'package:flame/events.dart';
+//import 'package:flame/geometry.dart';
+//import 'package:flame/palette.dart';
+//import 'package:flame/widgets.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(GameWidget(game: PlanetCityBuilder()));
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class PlanetCityBuilder extends FlameGame {
+  late final RouterComponent router;
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  Color backgroundColor() => const Color(0xFFD3D3D3);
 
   @override
-  Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Hello World!'),
-        ),
-        body: Center(
-          child: Column (
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Text('Click this button to load an image'),
-              const SizedBox(height: 20),
-              ElevatedButton(onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SecondPage()),
-              );
-            }, 
-            child: const Text('Go to Second Page'))
-          ],)
-        )
-      );
+  Future<void> onLoad() async {
+    add (
+      router = RouterComponent(
+        routes: {
+          'loading': Route(LoadingScreen.new),
+          'planetselect': Route(PlanetSelectScreen.new),
+          'maingame': Route(MainGameScreen.new),
+          'pause': PauseRoute(),
+        },
+        initialRoute: 'loading',
+      ),
+    ); 
   }
 }

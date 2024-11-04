@@ -1,4 +1,4 @@
-name: cs_545_jahnu_best
+name: planet_city_builder
 description: "CS 545 Jahnu Best."
 publish_to: 'none'
 version: 0.1.1
@@ -12,6 +12,7 @@ dependencies:
   path_provider: ^2.0.0
   permission_handler: ^11.0.0
   file_picker: ^8.0.0
+  flame: ^1.21.0
 
 dev_dependencies:
   flutter_test:
@@ -20,3 +21,19 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: GameOfSquids
+      fonts:
+      - asset: assets/fonts/Game_Of_Squids.ttf
+
+    - family: Cartesian
+      fonts:
+      - asset: assets/fonts/Cartesian.ttf
+      
+  assets:
+    - assets/images/loading_background_img_3.jpg
+    - assets/images/stars.jpg
+    - assets/images/mars_background.jpg
+    - assets/images/mars_planet.png
+    - assets/images/ice_planet.png
+    - assets/images/fire_planet.png

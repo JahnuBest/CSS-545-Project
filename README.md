@@ -1,3 +1,52 @@
+Simple Prototype Description for Planet City Builder
+Team members: Jahnu Best
+Development: Flutter + Dart + Flame
+Platforms: Cross-platform
+
+Current features included:
+    Loading screen (hard-coded progress bar)
+    Planet selection screen with sliding gesture functionality
+    Procedural city-builder generator with basic features
+        Three different square-shaped zone types generate based on simple demand variable
+        Zones generate buildings based on demand which increase population
+        Basic Text UI to describe city
+
+Disparity between Prototype and MVP:
+    Little to no user control over city design
+        User can manually place zones
+        User can manually draw roads
+        User can choose from different zone shapes and sizes
+        Alternatively, can select from variety of city designs (grid, circle, random, etc.)
+    Multiple cities per planet
+        Need to store information for each city for each planet
+        Meed to load information when planet or city is loaded
+        Add dropdown menu (?) from planet select view to access specific city
+    Autosave feature
+        Need to store all details of city in SharedPreferences
+        Every so often, autosave city status
+        Load last saved city on planet when loaded
+    Basic resource management
+        Add budget/expenses panel 
+        Each city should generate X specific resources for export (track with variables)
+            More extreme planets are more expensive to build/maintain, but over time export more valuable resources
+    Sound Effects/Music
+        Aid with immersion
+        Relatively simple to implement; difficult to assemble
+
+The generic goals of the game are for the player to feel curious to continue finding new planets to habitat and express their creativity through the founding and expansion of different cities.
+
+Value: Immersion into different worlds
+    Have different planets with variety of resources (and terrain?) across different cities to incentivize growth and commitment
+    Monetary and resource tracking combined with scarcity of resources should help incentivize long-term commitment to a specific game save.
+Value: Control over creativity
+    Players should be able to design some high-level aspects of their city such as major road paths, important buildings, and the layout of the city.
+    Players should be able to choose where to build their city and what resources to mine/export.
+    Players should have management over their budget and expenses.
+    Bonus: Implement districts with specific rules/budgets for more fine-tuning.
+Value: Emphasize difficulty in space exploration and colonization
+    The more extreme planets should be more expensive to build cities on and to mine the more valuable resources. (Eventually they should be locked according to a research tree, but not for MVP.)
+    Expansion should be slow and expensive to encourage commitment to one city, until it is profitable enough to finance the founding of other cities.
+
 Preferred OS: Android
 Preferred language: Kotlin or Dart 
 Cross-platform development: No, unless using Flutter.io 
