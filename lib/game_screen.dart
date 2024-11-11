@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/input.dart';
@@ -6,9 +9,12 @@ import 'package:flutter/material.dart' hide Route;
 import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
 import 'package:flame/palette.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:planet_city_builder/game_components/building.dart';
 import 'package:planet_city_builder/main.dart';
 import 'package:planet_city_builder/game_components/zone.dart';
 import 'package:flame/game.dart';
+import 'package:flame/flame.dart';
 import 'dart:math';
 
 class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
@@ -18,6 +24,9 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   late SpriteComponent background;
 
   late OverlayEntry renameOverlay;
+  //Timer autosaveTmer = Timer(5, repeat: true);
+  Stopwatch elapsedTime = Stopwatch();
+  Stopwatch autosaveTicker = Stopwatch();
   //final TextEditingController _controller = TextEditingController();
 
   List<Zone> zones = [];
@@ -44,6 +53,20 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
       BackButton(),
       PauseButton(),
     ]);
+    final gameData = await loadGameData();
+    if (gameData != null) {
+      setGameFromData(gameData);
+    } else {  //Loading game for the first time
+      _initializeZones();
+    }
+    elapsedTime.start();
+    autosaveTicker.start();
+  }
+
+  @override
+  void onRemove() {
+    super.onRemove();
+    saveData();
   }
 
   Vector2 calculateBackgroundSize(Vector2 originalSize) {
@@ -90,10 +113,17 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   @override
   void update(double dt) {
     super.update(dt);
+    if (autosaveTicker.elapsed.inSeconds >= 5) {
+      print("5 seconds have passed, autosaving (change to every 5 mins)");
+      saveData();
+      autosaveTicker.reset();
+    }
 
-    if (zones.isEmpty) {
+    if (zones.isEmpty) {  //Shouldn't happen
       _initializeZones();
     }
+
+    //Adjust demand for each zone type
     for (ZoneType ztd in demand.keys) {
       demand[ztd] += rng.nextDouble() * dt * 0.002;
       demand[ztd] = demand[ztd].clamp(0.0, 1.0);
@@ -115,7 +145,7 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
       }
     }
     
-
+    //Increase population of each zone based on building population growth
     for (var zone in zones) {
       for (var building in zone.buildings){
         if (building.popIncrease > 0) {
@@ -186,8 +216,72 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   List<Zone> getZonesType(ZoneType type) {
     return zones.where((zone) => zone.type == type).toList();
   }
+
+  Future<File> _getGameDataFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return File('${directory.path}/gameData.json');
+  }
+
+  Future<void> saveData() async {
+    final file = await _getGameDataFile();
+    String jsonData = jsonEncode(getSaveState());
+    await file.writeAsString(jsonData);
+  }
+
+/*
+Not everything is currently saved. Some data will be missing.
+Complete data will be added to save states as game development expands.
+Functionality will likely change, which means save data changes too.
+*/
+
+  Map<String, dynamic> getSaveState() {
+    return {
+      'cityname' : cityNameComponent.cityName,
+      'zones' : zones.map((zone) => {
+        'type' : zone.type.toString(),
+        'position' : {'x' : zone.position.x, 'y' : zone.position.y},
+        'size' : zone.size,
+        'buildings' : zone.buildings.map((building) => {
+          'position' : {'x': building.position.x, 'y': building.position.y},
+          'population' : building.population,
+        }).toList(),
+      }).toList(),
+      'lastSaveTime' : DateTime.now().toIso8601String(),
+    };
+  }
+
+  void setGameFromData(Map<String, dynamic> gameData) {
+    cityNameComponent.cityName = gameData['cityname'];
+    zones = List.empty();
+    cityPopulationComponent.population = 0;
+    for (final zone in gameData['zones']) {
+      Zone newZone = Zone(zone['type'], zone['position'], zone['size']);
+      for (final building in zone['buildings']) {
+        Building newBuilding = Building(building['position']);
+        newBuilding.population = building['population'];
+        cityPopulationComponent.population += newBuilding.population;
+        newZone.add(newBuilding);
+      }
+      zones.add(newZone);
+    }
+  }
+
+  Future<Map<String, dynamic>?> loadGameData() async {
+    try {
+      final file = await _getGameDataFile();
+      if (await file.exists()) {
+        String jsonData = await file.readAsString();
+        return jsonDecode(jsonData);
+      }
+    } catch (e) {
+      print("Error loading game data: $e");
+    }
+    return null;
+  }
 }
 
+
+//City Name Textbox
 class CityNameComponent extends PositionComponent with TapCallbacks, HasGameRef<PlanetCityBuilder> {
   CityNameComponent() {
    _textComponent = TextComponent(
