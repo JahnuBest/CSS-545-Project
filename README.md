@@ -1,3 +1,6 @@
+Prototype 2 for Planet City Builder
+Team members: Jahnu Best
+
 Simple Prototype Description for Planet City Builder
 Team members: Jahnu Best
 Development: Flutter + Dart + Flame
