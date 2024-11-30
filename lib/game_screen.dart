@@ -1,26 +1,25 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
-import 'package:flame/input.dart';
 import 'package:flame/rendering.dart';
 import 'package:flutter/material.dart' hide Route;
-import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
-import 'package:flame/palette.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:planet_city_builder/game_components/building.dart';
 import 'package:planet_city_builder/main.dart';
 import 'package:planet_city_builder/game_components/zone.dart';
+import 'package:planet_city_builder/game_components/city_name_component.dart';
+import 'package:planet_city_builder/game_components/city_population_component.dart';
+import 'package:planet_city_builder/game_components/city_balance_component.dart';
 import 'package:flame/game.dart';
-import 'package:flame/flame.dart';
 import 'dart:math';
 
 class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   late CameraComponent camera;
   late CityNameComponent cityNameComponent = CityNameComponent();
   late CityPopulationComponent cityPopulationComponent = CityPopulationComponent();
+  late CityBalanceComponent cityBalanceComponent = CityBalanceComponent();
   late SpriteComponent background;
 
   late OverlayEntry renameOverlay;
@@ -37,7 +36,7 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   };
   final Random rng = Random();
   final double initialZoneRadius = 50;
-  final Vector2 defaultZoneSize = Vector2(150,150);
+  late Vector2 defaultZoneSize;
 
   @override
   Future<void> onLoad() async {
@@ -48,11 +47,13 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
     background.position = gameRef.size / 2;
     add(background);
     addAll([
-      cityNameComponent,   // Clickable text box for renaming city
-      cityPopulationComponent,   // Non-clickable text box for population
+      cityNameComponent,   
+      cityPopulationComponent,
+      cityBalanceComponent,
       BackButton(),
       PauseButton(),
     ]);
+    defaultZoneSize = Vector2(gameRef.size.length / 13, gameRef.size.length / 13);
     final gameData = await loadGameData();
     if (gameData != null) {
       setGameFromData(gameData);
@@ -277,124 +278,6 @@ Functionality will likely change, which means save data changes too.
       print("Error loading game data: $e");
     }
     return null;
-  }
-}
-
-
-//City Name Textbox
-class CityNameComponent extends PositionComponent with TapCallbacks, HasGameRef<PlanetCityBuilder> {
-  CityNameComponent() {
-   _textComponent = TextComponent(
-      text: cityName,
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          fontSize: 24,
-          fontFamily: "GameOfSquids",
-          color: Colors.black,
-        ),
-      ),
-      anchor: Anchor.center,
-    );
-    add(_textComponent);
-  }
-
-  String cityName = 'Capitol City';
-  late TextComponent _textComponent;
-
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    position = Vector2(size.x / 2, size.y - 100); // Bottom center position
-  }
-
-  @override
-  void onTapUp(TapUpEvent event) {
-    _showRenameDialog();
-  }
-
-  void _showRenameDialog() {
-    return;
-    /*
-    final overlay = OverlayEntry(
-      builder: (context) {
-        String newCityName = cityName;
-
-        return Center(
-          child: Material(
-            color: Colors.black54,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    decoration: InputDecoration(hintText: 'Enter new city name'),
-                    onChanged: (value) => newCityName = value,
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          cityName = newCityName;
-                          _textComponent.text = cityName;
-                          Overlay.of(context).remove(overlay);
-                        },
-                        child: Text('Submit'),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          Overlay.of(context).remove(overlay);
-                        },
-                        child: Text('Cancel'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    // Insert the overlay into the widget tree
-    Overlay.of(context).insert(overlay);
-    */
-  }
-}
-
-class CityPopulationComponent extends TextComponent {
-  CityPopulationComponent({int initialPopulation = 0})
-      : population = initialPopulation,
-        super(
-          text: 'Population: $initialPopulation',
-          textRenderer: TextPaint(
-            style: const TextStyle(
-              fontSize: 20,
-              fontFamily: "GameOfSquids",
-              color: Colors.black54,
-            ),
-          ),
-          anchor: Anchor.center,
-        );
-
-  int population;
-
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    position = Vector2(size.x / 2, size.y - 50);  
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-    if (text != 'Population: $population') {
-      text = 'Population: $population';
-    }
   }
 }
 
