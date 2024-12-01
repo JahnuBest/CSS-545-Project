@@ -18,6 +18,10 @@ class CityPopulationComponent extends TextComponent {
 
   int population;
 
+  void updatePopulation(int newPop) {
+    population = newPop;
+  }
+
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);

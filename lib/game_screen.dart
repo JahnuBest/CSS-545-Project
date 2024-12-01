@@ -45,8 +45,8 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
     background.size = calculateBackgroundSize(background.sprite!.originalSize);
     background.anchor = Anchor.center;
     background.position = gameRef.size / 2;
-    add(background);
     addAll([
+      background,
       cityNameComponent,   
       cityPopulationComponent,
       cityBalanceComponent,
