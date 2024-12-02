@@ -16,15 +16,14 @@ import 'package:flame/game.dart';
 import 'dart:math';
 
 class ZoneInfoComponent extends PositionComponent {
-  /*
-  ZoneInfoComponent(
-
-  );
-  */
+  
+  ZoneInfoComponent(this.pos);
 
   Map<String, int> resources = {
         "Iron":2, "Oil": 24, "Uranium":5
       };
+  double cost = 1234567;
+  Vector2 pos;
 
   @override
   Future<void> onLoad() async {
@@ -39,9 +38,18 @@ class ZoneInfoComponent extends PositionComponent {
             fontFamily: "Cartesian",
             color: Colors.black,
             ),
-          )
+          ),
+          position: pos,
         )
       );
+      pos += (0,20) as Vector2;
+      /*
+      add(
+        TextComponent(
+          text
+        )
+      )
+      */
     }
   }
 

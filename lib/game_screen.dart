@@ -15,7 +15,7 @@ import 'package:planet_city_builder/game_components/city_balance_component.dart'
 import 'package:flame/game.dart';
 import 'dart:math';
 
-class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
+class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityBuilder>{
   late CameraComponent camera;
   late CityNameComponent cityNameComponent = CityNameComponent();
   late CityPopulationComponent cityPopulationComponent = CityPopulationComponent();
