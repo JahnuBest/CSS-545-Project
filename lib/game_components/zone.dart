@@ -1,17 +1,19 @@
 import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:planet_city_builder/game_components/building.dart';
+import 'package:planet_city_builder/game_components/zone_info_component.dart';
 
-enum ZoneType { residential, commercial, industrial }
+enum ZoneType { research, residential, recreation, mining }
 
-class Zone extends PositionComponent with DragCallbacks{
+class Zone extends PositionComponent with TapCallbacks {
   late ZoneType type;
   List<Building> buildings = [];
   List<Vector2> zoneSlots = [];
+  bool active = false;
   
+  late ZoneInfoComponent zic;
   //double demand = 0.0;
   final Random rng = Random();
   late Color baseColor;
@@ -42,6 +44,7 @@ class Zone extends PositionComponent with DragCallbacks{
       ),
       anchor: Anchor.center,
     );
+    zic = ZoneInfoComponent(position);
   }
 
   late TextComponent _zoneCount;
@@ -50,16 +53,22 @@ class Zone extends PositionComponent with DragCallbacks{
     switch (type) {
       case ZoneType.residential:
         return Colors.green;
-      case ZoneType.commercial:
+      case ZoneType.research:
         return Colors.blue;
-      case ZoneType.industrial:
+      case ZoneType.mining:
         return Colors.yellow;
+      case ZoneType.recreation:
+        return Colors.purple;
     }
   }
   
   //demand.clamp(0.2, 1.0)
   Color get zoneColor => baseColor.withOpacity(0.5);
   Paint get zonePaint => Paint()..color = zoneColor;
+  Paint get zoneBorder => Paint()
+    ..color = Colors.black
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 5;
 
   void generateBuildings() {
     buildings.add(Building(zoneSlots.removeAt(rng.nextInt(zoneSlots.length))));
@@ -86,6 +95,22 @@ class Zone extends PositionComponent with DragCallbacks{
   }
 
   @override
+  void onTapUp(TapUpEvent event) {
+    if (!active) {
+      active = true;
+    }
+    /*
+    if (zic.parent == this) {
+      remove(zic);
+    }
+    else {
+      add(zic);
+    }
+    */
+    //print("Pressed zone");
+  }
+
+  @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
     _zoneCount.position = position + Vector2(width / 2, height / 2);  
@@ -93,8 +118,13 @@ class Zone extends PositionComponent with DragCallbacks{
 
    @override
   void render(Canvas canvas) {
-    canvas.drawRect(size.toRect(), zonePaint);
-    _zoneCount.render(canvas);
+    if (active) {
+      canvas.drawRect(size.toRect(), zonePaint);
+      _zoneCount.render(canvas);
+    }
+    else {
+      canvas.drawRect(size.toRect(), zoneBorder);
+    }
     /*
     for (final building in buildings) {
       building.render(canvas);

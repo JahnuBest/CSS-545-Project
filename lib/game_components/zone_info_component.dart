@@ -42,7 +42,7 @@ class ZoneInfoComponent extends PositionComponent {
           position: pos,
         )
       );
-      pos += (0,20) as Vector2;
+      pos.y += 20;
       /*
       add(
         TextComponent(
@@ -52,7 +52,4 @@ class ZoneInfoComponent extends PositionComponent {
       */
     }
   }
-
-  
-
 }

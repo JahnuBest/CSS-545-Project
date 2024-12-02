@@ -15,6 +15,8 @@ import 'package:planet_city_builder/game_components/city_balance_component.dart'
 import 'package:flame/game.dart';
 import 'dart:math';
 
+enum GameMode { placezone, visual, locateresource}
+
 class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityBuilder>{
   late CameraComponent camera;
   late CityNameComponent cityNameComponent = CityNameComponent();
@@ -28,11 +30,14 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
   Stopwatch autosaveTicker = Stopwatch();
   //final TextEditingController _controller = TextEditingController();
 
+  GameMode gameMode = GameMode.visual;
+
   List<Zone> zones = [];
   Map demand = <ZoneType, double>{
     ZoneType.residential:0.0,
-    ZoneType.commercial:0.0,
-    ZoneType.industrial:0.0
+    ZoneType.research:0.0,
+    ZoneType.mining:0.0,
+    ZoneType.recreation:0.0
   };
   final Random rng = Random();
   final double initialZoneRadius = 50;
