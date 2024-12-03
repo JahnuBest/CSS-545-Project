@@ -12,6 +12,7 @@ class Zone extends PositionComponent with TapCallbacks {
   List<Building> buildings = [];
   List<Vector2> zoneSlots = [];
   bool active = false;
+  bool visible = false;
   
   late ZoneInfoComponent zic;
   //double demand = 0.0;
@@ -118,13 +119,16 @@ class Zone extends PositionComponent with TapCallbacks {
 
    @override
   void render(Canvas canvas) {
-    if (active) {
-      canvas.drawRect(size.toRect(), zonePaint);
-      _zoneCount.render(canvas);
+    if (visible) {
+      if (active) {
+        canvas.drawRect(size.toRect(), zonePaint);
+        _zoneCount.render(canvas);
+      }
+      else {
+        canvas.drawRect(size.toRect(), zoneBorder);
+      }
     }
-    else {
-      canvas.drawRect(size.toRect(), zoneBorder);
-    }
+    
     /*
     for (final building in buildings) {
       building.render(canvas);

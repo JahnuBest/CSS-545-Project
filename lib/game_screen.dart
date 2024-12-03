@@ -57,6 +57,15 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
       cityBalanceComponent,
       BackButton(),
       PauseButton(),
+      ZonePlacementSettingButton(() {
+        gameMode = GameMode.placezone;
+      }, Vector2(50, gameRef.size.y - 100)),
+      VisualSettingButton(() {
+        gameMode = GameMode.visual;
+      }, Vector2(100, gameRef.size.y - 100)),
+      ResourceLocatorSettingButton(() {
+        gameMode = GameMode.locateresource;
+      }, Vector2(150, gameRef.size.y - 100))
     ]);
     defaultZoneSize = Vector2(gameRef.size.length / 13, gameRef.size.length / 13);
     final gameData = await loadGameData();
@@ -153,6 +162,12 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
     
     //Increase population of each zone based on building population growth
     for (var zone in zones) {
+      //Change later to be in render()
+      if (gameMode == GameMode.placezone) {
+        for (Zone zone in zones) {
+          if ( !zone.visible) zone.visible = true;
+        }
+      }
       for (var building in zone.buildings){
         if (building.popIncrease > 0) {
           cityPopulationComponent.population += building.popIncrease;
@@ -324,6 +339,52 @@ abstract class SimpleButton extends PositionComponent with TapCallbacks {
   void onTapCancel(TapCancelEvent event) {
     _iconPaint.color = const Color(0xffaaaaaa);
   }
+}
+
+class ZonePlacementSettingButton extends SimpleButton with HasGameReference<PlanetCityBuilder>{
+  ZonePlacementSettingButton(this.onTapCallback, Vector2 pos) : super(
+    Path()
+      ..moveTo(10,10)
+      ..lineTo(30, 10)
+      ..lineTo(10, 30)
+      ..lineTo(30, 30),
+      position: pos,
+  );
+
+  final VoidCallback onTapCallback;
+
+  @override
+  void action() => onTapCallback();
+}
+
+class VisualSettingButton extends SimpleButton with HasGameReference<PlanetCityBuilder>{
+  VisualSettingButton(this.onTapCallback, Vector2 pos) : super(
+    Path()
+      ..moveTo(10, 10)
+      ..lineTo(20, 30)
+      ..lineTo(30, 10),
+      position: pos,
+  );
+
+  final VoidCallback onTapCallback;
+
+  @override
+  void action() => onTapCallback();
+}
+
+class ResourceLocatorSettingButton extends SimpleButton with HasGameReference<PlanetCityBuilder>{
+  ResourceLocatorSettingButton(this.onTapCallback, Vector2 pos) : super(
+    Path()
+      ..moveTo(15, 10)
+      ..lineTo(15, 30)
+      ..lineTo(25, 30),
+      position: pos,
+  );
+
+  final VoidCallback onTapCallback;
+
+  @override
+  void action() => onTapCallback();
 }
 
 class BackButton extends SimpleButton with HasGameReference<PlanetCityBuilder> {
