@@ -38,7 +38,7 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
   Map demand = <ZoneType, double>{};
   Map zoneDemandBars = <ZoneType, ZoneTypeDemandBar>{};
   Map ztbButtons = <ZoneType,ZoneTypeButton>{};
-  ZoneType? selectedZone;
+  ZoneType selectedZone = ZoneType.residential;
 
   final Random rng = Random();
   final double initialZoneRadius = 50;
@@ -77,6 +77,7 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
       ZonePlacementSettingButton(() {
         gameMode = GameMode.placezone;
         ztbButtons.forEach((k,v) => add(v));
+        ztbButtons[ZoneType.residential].selected = true;
       }, Vector2(50, gameRef.size.y - 100)),
       VisualSettingButton(() {
         gameMode = GameMode.visual;

@@ -18,9 +18,11 @@ class Zone extends PositionComponent with TapCallbacks {
   
   //late ZoneInfoComponent zic;
   Map<String, int> resources = {
-        "Iron":2, "Oil": 24, "Uranium":5
-      };
-  double cost = 1234567;
+    "Iron":0,
+    "Oil":0,
+    "Uranium":0
+  };
+  double cost = 1000000;
 
   //double demand = 0.0;
   final Random rng = Random();
@@ -35,6 +37,15 @@ class Zone extends PositionComponent with TapCallbacks {
     baseColor = _getBaseColor(type);
     paint = Paint()..color = baseColor;
     const double margin = 12.5;
+
+    resources["Iron"] = rng.nextInt(10);
+    resources["Oil"] = rng.nextInt(50);
+    resources["Uranium"] = rng.nextInt(5);
+
+    //Flat cost of new zone: $1,000,000
+    //Iron: 10,000  Oil: 5,000  Uranium: 50,000
+    cost += (resources["Iron"]! * 10000) + (resources["Oil"]! * 5000) + (resources["Uranium"]! * 50000);
+    
     zoneSlots = [
       position + Vector2(margin, margin),                      
       position + Vector2(size.x - 25 - margin, margin),             
