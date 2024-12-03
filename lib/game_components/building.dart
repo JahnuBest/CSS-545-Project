@@ -6,7 +6,7 @@ import 'package:planet_city_builder/main.dart';
 class Building extends PositionComponent{
   int capacity = 100;
   int population = 0;
-  int popIncrease = 0;
+  //int popIncrease = 0;
   Vector2 boxSize = Vector2(25,25);
   late Vector2 zonePos;
   final Random rng = Random();
@@ -23,9 +23,9 @@ class Building extends PositionComponent{
   @override
   void update(double dt) {
     super.update(dt);
-    if (rng.nextDouble() < 1.0 && population <= capacity) {
+    if (rng.nextDouble() < 1.0 && population < capacity) {
       population++;
-      popIncrease++;
+      //popIncrease++;
     }
   }
   /*

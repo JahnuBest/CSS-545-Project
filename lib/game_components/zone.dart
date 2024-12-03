@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:planet_city_builder/game_components/building.dart';
 import 'package:planet_city_builder/game_components/zone_info_component.dart';
 
@@ -9,12 +10,18 @@ enum ZoneType { research, residential, recreation, mining }
 
 class Zone extends PositionComponent with TapCallbacks {
   late ZoneType type;
+  late TextComponent zoneInfo;
   List<Building> buildings = [];
   List<Vector2> zoneSlots = [];
   bool active = false;
   bool visible = false;
   
-  late ZoneInfoComponent zic;
+  //late ZoneInfoComponent zic;
+  Map<String, int> resources = {
+        "Iron":2, "Oil": 24, "Uranium":5
+      };
+  double cost = 1234567;
+
   //double demand = 0.0;
   final Random rng = Random();
   late Color baseColor;
@@ -45,7 +52,26 @@ class Zone extends PositionComponent with TapCallbacks {
       ),
       anchor: Anchor.center,
     );
-    zic = ZoneInfoComponent(position);
+    //zic = ZoneInfoComponent(position);
+  }
+
+  @override
+  Future<void> onLoad() async {
+    String zoneInfoText = "";
+    resources.forEach((k,v) => zoneInfoText += "$k: $v\n");
+    zoneInfoText += "\$${NumberFormat.decimalPattern().format(cost)}";
+    zoneInfo = TextComponent(
+      text: zoneInfoText,
+          textRenderer: TextPaint(
+            style: const TextStyle(
+            fontSize: 12,
+            fontFamily: "Cartesian",
+            color: Colors.white,
+            ),
+          ),
+          position: Vector2(position.x + 20, position.y + 20),
+    );
+    add(zoneInfo);
   }
 
   late TextComponent _zoneCount;
@@ -69,7 +95,7 @@ class Zone extends PositionComponent with TapCallbacks {
   Paint get zoneBorder => Paint()
     ..color = Colors.black
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 5;
+    ..strokeWidth = 3;
 
   void generateBuildings() {
     buildings.add(Building(zoneSlots.removeAt(rng.nextInt(zoneSlots.length))));
@@ -99,6 +125,7 @@ class Zone extends PositionComponent with TapCallbacks {
   void onTapUp(TapUpEvent event) {
     if (!active) {
       active = true;
+      remove(zoneInfo);
     }
     /*
     if (zic.parent == this) {
@@ -117,7 +144,7 @@ class Zone extends PositionComponent with TapCallbacks {
     _zoneCount.position = position + Vector2(width / 2, height / 2);  
   }
 
-   @override
+  @override
   void render(Canvas canvas) {
     if (visible) {
       if (active) {
@@ -126,6 +153,7 @@ class Zone extends PositionComponent with TapCallbacks {
       }
       else {
         canvas.drawRect(size.toRect(), zoneBorder);
+        zoneInfo.render(canvas);
       }
     }
     

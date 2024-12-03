@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:collection/collection.dart';
 import 'package:flame/events.dart';
 import 'package:flame/palette.dart';
 import 'package:flame/rendering.dart';
@@ -34,8 +34,11 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
   GameMode gameMode = GameMode.visual;
 
   List<Zone> zones = [];
+  List<Zone> inactiveZones = [];
   Map demand = <ZoneType, double>{};
   Map zoneDemandBars = <ZoneType, ZoneTypeDemandBar>{};
+  Map ztbButtons = <ZoneType,ZoneTypeButton>{};
+  ZoneType? selectedZone;
 
   final Random rng = Random();
   final double initialZoneRadius = 50;
@@ -45,16 +48,23 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
   Future<void> onLoad() async {
     background = SpriteComponent()
       ..sprite = await Sprite.load('mars_background.jpg');
-    background.size = calculateBackgroundSize(background.sprite!.originalSize);
+    background.size = calculateBackgroundSize(background.sprite!.originalSize) * 2;
     background.anchor = Anchor.center;
     background.position = gameRef.size / 2;
     int i = 0;
     for (ZoneType zt in ZoneType.values) {
       demand[zt] = 0.0;
       zoneDemandBars[zt] = ZoneTypeDemandBar(
-        Vector2(gameRef.size.x - 200 - (30 * i), gameRef.size.y - 100), 
+        Vector2(gameRef.size.x - 200 - (40 * i), gameRef.size.y - 100), 
         getBaseColor(zt)
       );
+      ztbButtons[zt] = ZoneTypeButton(() {
+        selectedZone = zt;
+        for (var ztb in ztbButtons.entries) { //De-select the other buttons
+          if(ztb.key != zt) ztb.value.selected = false;
+        }
+      }
+      , Vector2(50 + (50 * i) as double, gameRef.size.y - 150), getBaseColor(zt));
       i++;
     }
     addAll([
@@ -66,12 +76,15 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
       PauseButton(),
       ZonePlacementSettingButton(() {
         gameMode = GameMode.placezone;
+        ztbButtons.forEach((k,v) => add(v));
       }, Vector2(50, gameRef.size.y - 100)),
       VisualSettingButton(() {
         gameMode = GameMode.visual;
+        ztbButtons.forEach((k,v) => remove(v));
       }, Vector2(100, gameRef.size.y - 100)),
       ResourceLocatorSettingButton(() {
         gameMode = GameMode.locateresource;
+        ztbButtons.forEach((k,v) => remove(v));
       }, Vector2(150, gameRef.size.y - 100)),
     ]);
     for (ZoneTypeDemandBar ztdb in zoneDemandBars.values) {
@@ -138,7 +151,7 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
   @override
   void update(double dt) {
     super.update(dt);
-    if (autosaveTicker.elapsed.inSeconds >= 5) {
+    if (autosaveTicker.elapsed.inSeconds >= 5000) {
       print("5 seconds have passed, autosaving (change to every 5 mins)");
       saveData();
       autosaveTicker.reset();
@@ -150,9 +163,10 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
 
     //Adjust demand for each zone type
     for (ZoneType ztd in demand.keys) {
-      demand[ztd] += rng.nextDouble() * dt * 0.002;
+      demand[ztd] += rng.nextDouble() * dt * 0.02;
       demand[ztd] = demand[ztd].clamp(0.0, 1.0);
-      //zoneDemandBars[ztd].adjustHeight(demand[ztd]);
+      zoneDemandBars[ztd].adjustHeight(demand[ztd]);
+      /*
       if (rng.nextDouble() < demand[ztd]) {
         var zoneTypeList = getZonesType(ztd);
         zoneTypeList = zoneTypeList.where((zone) => zone.zoneSlots.isNotEmpty).toList(); //Only include zones with available spots
@@ -168,24 +182,50 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
           add(newZone);
         }
         demand[ztd] = 0.0;
+        
       }
+      */
     }
     
+    for (var zone in inactiveZones) {
+      //An inactive zone was activated
+      if (zone.active) {
+        zone.type = selectedZone!;
+        zone.baseColor = getBaseColor(zone.type);
+        inactiveZones.remove(zone);
+        zones.add(zone);
+        cityBalanceComponent.balance -= zone.cost as int;
+        for (Vector2 zonePos in getAdjacentPosition(zone.position, zone.size)) {
+          Zone newInactiveZone = Zone(ZoneType.residential, zonePos, defaultZoneSize);
+          inactiveZones.add(newInactiveZone);
+          add(newInactiveZone);
+        }
+      }
+      else {
+        if (gameMode == GameMode.placezone && !zone.visible) zone.visible = true;
+        else if (gameMode != GameMode.placezone && zone.visible) zone.visible = false;
+      }
+    }
+
     //Increase population of each zone based on building population growth
+    cityPopulationComponent.population = 0;
     for (var zone in zones) {
       //Change later to be in render()
-      if (gameMode == GameMode.placezone) {
-        for (Zone zone in zones) {
-          if ( !zone.visible) zone.visible = true;
-        }
+      if (gameMode == GameMode.placezone && !zone.visible) {
+        zone.visible = true;
+      }
+      else if (gameMode != GameMode.placezone && zone.visible) {
+        zone.visible = false;
       }
       if (zone.active) {
         for (var building in zone.buildings){
+          cityPopulationComponent.population += building.population;
+          /*
           if (building.popIncrease > 0) {
             cityPopulationComponent.population += building.popIncrease;
-            //print("Increased pop by ${building.popIncrease}");
             building.popIncrease = 0;
           }
+          */
         } 
       }
     }
@@ -198,6 +238,12 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
     newZone.active = true;  //First zone comes ready to go, others need to be manually initialized
     zones.add(newZone);
     add(newZone);
+    //Add inactive zones all around initial zone that can be activated
+    for (Vector2 zonePos in getAdjacentPosition(newZone.position, newZone.size)) {
+      Zone newInactiveZone = Zone(ZoneType.residential, zonePos, defaultZoneSize);
+      inactiveZones.add(newInactiveZone);
+      add(newInactiveZone);
+    }
     /*
     for (var zoneType in ZoneType.values) {
       Vector2 position;
@@ -236,8 +282,16 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
     return Vector2(cos(angle) * distance, sin(angle) * distance);
   }
 
+  //Probably a better way to do this ...
   bool isOverlapping(Vector2 position) {
+    //Check overlap with all active zones
     for (var zone in zones) {
+      if (zone.isOverlapping(position, zone.size)) {
+        return true;
+      }
+    }
+    //Check overlap with all inactive zones
+    for (var zone in inactiveZones) {
       if (zone.isOverlapping(position, zone.size)) {
         return true;
       }
@@ -245,8 +299,8 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
     return false;
   }
   
-  Vector2 getAdjacentPosition(Vector2 existingPosition, Vector2 size) {
-    final rng = Random();
+  List<Vector2> getAdjacentPosition(Vector2 existingPosition, Vector2 size) {
+    //final rng = Random();
     List<Vector2> options = [];
     options.addAll([
       existingPosition + Vector2(0, - size.y),
@@ -260,7 +314,7 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
       }
     }
     if (options.isNotEmpty) {
-      return options[rng.nextInt(options.length)];
+      return options;
     } else {
       throw Exception("Failed to find adjacent zone placement");
     }
@@ -333,9 +387,38 @@ Functionality will likely change, which means save data changes too.
   }
 }
 
+class ZoneTypeButton extends RectangleComponent with TapCallbacks {
+  ZoneTypeButton(this.onTapCallback, pos, Color color) : super(
+    position: pos,
+    size: Vector2(40,40),
+    paint: Paint()..color = color
+  );
+
+  final VoidCallback onTapCallback;
+  bool selected = false;
+  Paint selectedBorder = Paint()
+    ..color = Colors.white
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3;
+
+  @override
+  void onTapUp(TapUpEvent event) {
+    onTapCallback();
+    selected = !selected;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    if (selected) {
+      canvas.drawRect(size.toRect(), selectedBorder);
+    }
+  }
+}
+
 class ZoneTypeDemandBar extends RectangleComponent {
   ZoneTypeDemandBar(Vector2 pos, Color color) : super(
-    anchor: Anchor.center, 
+    anchor: Anchor.topCenter, 
     position: pos,
     size: Vector2(20,80),
     paint: Paint()..color = color
@@ -387,7 +470,7 @@ abstract class SimpleButton extends PositionComponent with TapCallbacks {
   }
 }
 
-class ZonePlacementSettingButton extends SimpleButton with HasGameReference<PlanetCityBuilder>{
+class ZonePlacementSettingButton extends SimpleButton{
   ZonePlacementSettingButton(this.onTapCallback, Vector2 pos) : super(
     Path()
       ..moveTo(10,10)
@@ -403,7 +486,7 @@ class ZonePlacementSettingButton extends SimpleButton with HasGameReference<Plan
   void action() => onTapCallback();
 }
 
-class VisualSettingButton extends SimpleButton with HasGameReference<PlanetCityBuilder>{
+class VisualSettingButton extends SimpleButton{
   VisualSettingButton(this.onTapCallback, Vector2 pos) : super(
     Path()
       ..moveTo(10, 10)
@@ -418,7 +501,7 @@ class VisualSettingButton extends SimpleButton with HasGameReference<PlanetCityB
   void action() => onTapCallback();
 }
 
-class ResourceLocatorSettingButton extends SimpleButton with HasGameReference<PlanetCityBuilder>{
+class ResourceLocatorSettingButton extends SimpleButton{
   ResourceLocatorSettingButton(this.onTapCallback, Vector2 pos) : super(
     Path()
       ..moveTo(15, 10)

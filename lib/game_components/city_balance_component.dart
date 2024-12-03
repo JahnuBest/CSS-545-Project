@@ -31,7 +31,7 @@ class CityBalanceComponent extends TextComponent {
     String formattedBalance = NumberFormat.decimalPattern().format(balance);
     if (text != '\$$formattedBalance') {
       text = '\$$formattedBalance';
-      position = Vector2(size.x / 2, 50);  
+      //position = Vector2(size.x / 2, size.y - 50);  
     }
   }
 }
