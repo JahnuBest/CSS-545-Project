@@ -6,7 +6,7 @@ class CityBalanceComponent extends TextComponent {
   CityBalanceComponent({int initialBalance = 123456789})
       : balance = initialBalance,
         super(
-          text: 'Bank Balance: $initialBalance',
+          text: '\$$initialBalance',
           textRenderer: TextPaint(
             style: const TextStyle(
               fontSize: 20,
@@ -22,15 +22,15 @@ class CityBalanceComponent extends TextComponent {
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
-    position = Vector2(size.x / 2, 50);  
+    position = Vector2(size.x / 2, size.y - 50);  
   }
 
   @override
   void update(double dt) {
     super.update(dt);
     String formattedBalance = NumberFormat.decimalPattern().format(balance);
-    if (text != 'Bank Balance: \$$formattedBalance') {
-      text = 'Bank Balance: \$$formattedBalance';
+    if (text != '\$$formattedBalance') {
+      text = '\$$formattedBalance';
       position = Vector2(size.x / 2, 50);  
     }
   }

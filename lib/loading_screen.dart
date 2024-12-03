@@ -24,7 +24,7 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
     add(background);
 
     final packageInfo = await PackageInfo.fromPlatform();
-    final version = packageInfo.version; // App version
+    final version = packageInfo.version;
 
     titleText = TextComponent(
       text: "Planet City Builder $version",

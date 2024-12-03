@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flame/events.dart';
+import 'package:flame/palette.dart';
 import 'package:flame/rendering.dart';
 import 'package:flutter/material.dart' hide Route;
 import 'package:flame/components.dart';
@@ -33,12 +34,9 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
   GameMode gameMode = GameMode.visual;
 
   List<Zone> zones = [];
-  Map demand = <ZoneType, double>{
-    ZoneType.residential:0.0,
-    ZoneType.research:0.0,
-    ZoneType.mining:0.0,
-    ZoneType.recreation:0.0
-  };
+  Map demand = <ZoneType, double>{};
+  Map zoneDemandBars = <ZoneType, ZoneTypeDemandBar>{};
+
   final Random rng = Random();
   final double initialZoneRadius = 50;
   late Vector2 defaultZoneSize;
@@ -50,6 +48,15 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
     background.size = calculateBackgroundSize(background.sprite!.originalSize);
     background.anchor = Anchor.center;
     background.position = gameRef.size / 2;
+    int i = 0;
+    for (ZoneType zt in ZoneType.values) {
+      demand[zt] = 0.0;
+      zoneDemandBars[zt] = ZoneTypeDemandBar(
+        Vector2(gameRef.size.x - 200 - (30 * i), gameRef.size.y - 100), 
+        getBaseColor(zt)
+      );
+      i++;
+    }
     addAll([
       background,
       cityNameComponent,   
@@ -65,8 +72,11 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
       }, Vector2(100, gameRef.size.y - 100)),
       ResourceLocatorSettingButton(() {
         gameMode = GameMode.locateresource;
-      }, Vector2(150, gameRef.size.y - 100))
+      }, Vector2(150, gameRef.size.y - 100)),
     ]);
+    for (ZoneTypeDemandBar ztdb in zoneDemandBars.values) {
+      add(ztdb);
+    }
     defaultZoneSize = Vector2(gameRef.size.length / 13, gameRef.size.length / 13);
     final gameData = await loadGameData();
     if (gameData != null) {
@@ -142,6 +152,7 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
     for (ZoneType ztd in demand.keys) {
       demand[ztd] += rng.nextDouble() * dt * 0.002;
       demand[ztd] = demand[ztd].clamp(0.0, 1.0);
+      //zoneDemandBars[ztd].adjustHeight(demand[ztd]);
       if (rng.nextDouble() < demand[ztd]) {
         var zoneTypeList = getZonesType(ztd);
         zoneTypeList = zoneTypeList.where((zone) => zone.zoneSlots.isNotEmpty).toList(); //Only include zones with available spots
@@ -168,19 +179,26 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
           if ( !zone.visible) zone.visible = true;
         }
       }
-      for (var building in zone.buildings){
-        if (building.popIncrease > 0) {
-          cityPopulationComponent.population += building.popIncrease;
-          //print("Increased pop by ${building.popIncrease}");
-          building.popIncrease = 0;
-        }
+      if (zone.active) {
+        for (var building in zone.buildings){
+          if (building.popIncrease > 0) {
+            cityPopulationComponent.population += building.popIncrease;
+            //print("Increased pop by ${building.popIncrease}");
+            building.popIncrease = 0;
+          }
+        } 
       }
     }
   }
 
   void _initializeZones() {
     final center = gameRef.size / 2;
-
+    Vector2 position = center + getRandomOffset(initialZoneRadius);
+    Zone newZone = Zone(ZoneType.residential, position, defaultZoneSize);
+    newZone.active = true;  //First zone comes ready to go, others need to be manually initialized
+    zones.add(newZone);
+    add(newZone);
+    /*
     for (var zoneType in ZoneType.values) {
       Vector2 position;
       if (zones.isEmpty){
@@ -194,6 +212,20 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
       Zone newZone = Zone(zoneType, position, defaultZoneSize);
       zones.add(newZone);
       add(newZone); 
+    }
+    */
+  }
+
+   Color getBaseColor(ZoneType type) {
+    switch (type) {
+      case ZoneType.residential:
+        return Colors.green;
+      case ZoneType.research:
+        return Colors.blue;
+      case ZoneType.mining:
+        return Colors.yellow;
+      case ZoneType.recreation:
+        return Colors.purple;
     }
   }
 
@@ -298,6 +330,20 @@ Functionality will likely change, which means save data changes too.
       print("Error loading game data: $e");
     }
     return null;
+  }
+}
+
+class ZoneTypeDemandBar extends RectangleComponent {
+  ZoneTypeDemandBar(Vector2 pos, Color color) : super(
+    anchor: Anchor.center, 
+    position: pos,
+    size: Vector2(20,80),
+    paint: Paint()..color = color
+  );
+
+  //Demand is a number between 0.0 and 1.0
+  void adjustHeight(double demand) {
+    size = Vector2(20, 80 * demand);
   }
 }
 

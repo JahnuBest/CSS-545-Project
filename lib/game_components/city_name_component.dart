@@ -26,7 +26,7 @@ class CityNameComponent extends PositionComponent with TapCallbacks, HasGameRef<
   @override
   void onGameResize(Vector2 size) {
     super.onGameResize(size);
-    position = Vector2(size.x / 2, size.y - 100); // Bottom center position
+    position = Vector2(size.x / 2, size.y - 100);
   }
 
   @override
