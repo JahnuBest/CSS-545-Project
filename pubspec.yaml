@@ -1,7 +1,7 @@
 name: planet_city_builder
 description: "CS 545 Jahnu Best."
 publish_to: 'none'
-version: 0.1.2
+version: 0.1.3
 
 environment:
   sdk: ^3.5.3
@@ -13,6 +13,7 @@ dependencies:
   permission_handler: ^11.0.0
   file_picker: ^8.0.0
   flame: ^1.21.0
+  flame_audio: ^2.10.6
   intl: ^0.18.0
   package_info_plus: ^4.0.0
 
@@ -39,3 +40,5 @@ flutter:
     - assets/images/mars_planet.png
     - assets/images/ice_planet.png
     - assets/images/fire_planet.png
+
+    - assets/music/bgMusic1.mp3

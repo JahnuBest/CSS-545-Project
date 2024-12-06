@@ -80,9 +80,9 @@ class Zone extends PositionComponent with TapCallbacks {
             color: Colors.white,
             ),
           ),
-          position: Vector2(position.x + 20, position.y + 20),
+          position: Vector2(position.x + 50, position.y + 50),
     );
-    add(zoneInfo);
+    //add(zoneInfo);
   }
 
   late TextComponent _zoneCount;

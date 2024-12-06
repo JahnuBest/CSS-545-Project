@@ -105,7 +105,7 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
       else {
         fadeOpacity = 0;
         //game.router.remove(this);
-        game.router.pushNamed('maingame');
+        game.router.pushNamed('planetselect');
       }
     }
   } 

@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:collection/collection.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flame/events.dart';
-import 'package:flame/palette.dart';
 import 'package:flame/rendering.dart';
 import 'package:flutter/material.dart' hide Route;
 import 'package:flame/components.dart';
@@ -38,7 +37,7 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
   Map demand = <ZoneType, double>{};
   Map zoneDemandBars = <ZoneType, ZoneTypeDemandBar>{};
   Map ztbButtons = <ZoneType,ZoneTypeButton>{};
-  ZoneType selectedZone = ZoneType.residential;
+  ZoneType selectedZone = ZoneType.residential; //Default - change later?
 
   final Random rng = Random();
   final double initialZoneRadius = 50;
@@ -98,6 +97,8 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
     } else {  //Loading game for the first time
       _initializeZones();
     }
+    //await FlameAudio.audioCache.load('bgMusic1.mp3');
+    //FlameAudio.bgm.play('bgMusic.mp3');
     elapsedTime.start();
     autosaveTicker.start();
   }
@@ -191,11 +192,13 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
     for (var zone in inactiveZones) {
       //An inactive zone was activated
       if (zone.active) {
-        zone.type = selectedZone!;
+        zone.type = selectedZone;
         zone.baseColor = getBaseColor(zone.type);
         inactiveZones.remove(zone);
         zones.add(zone);
-        cityBalanceComponent.balance -= zone.cost as int;
+        //Demand = 0: Full price  Demand = 1: 50% price
+        cityBalanceComponent.balance -= (zone.cost * (1 - (demand[zone.type] * 0.5))) as int;
+        demand[zone.type] = 0;
         for (Vector2 zonePos in getAdjacentPosition(zone.position, zone.size)) {
           Zone newInactiveZone = Zone(ZoneType.residential, zonePos, defaultZoneSize);
           inactiveZones.add(newInactiveZone);
