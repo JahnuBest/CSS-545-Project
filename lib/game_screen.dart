@@ -1,26 +1,28 @@
 import 'dart:convert';
 import 'dart:io';
-
-import 'package:flame/effects.dart';
+import 'dart:convert';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flame/events.dart';
-import 'package:flame/input.dart';
 import 'package:flame/rendering.dart';
 import 'package:flutter/material.dart' hide Route;
-import 'package:flutter/services.dart';
 import 'package:flame/components.dart';
-import 'package:flame/palette.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:planet_city_builder/game_components/building.dart';
 import 'package:planet_city_builder/main.dart';
 import 'package:planet_city_builder/game_components/zone.dart';
+import 'package:planet_city_builder/game_components/city_name_component.dart';
+import 'package:planet_city_builder/game_components/city_population_component.dart';
+import 'package:planet_city_builder/game_components/city_balance_component.dart';
 import 'package:flame/game.dart';
-import 'package:flame/flame.dart';
 import 'dart:math';
 
-class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
+enum GameMode { placezone, visual, locateresource}
+
+class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityBuilder>{
   late CameraComponent camera;
   late CityNameComponent cityNameComponent = CityNameComponent();
   late CityPopulationComponent cityPopulationComponent = CityPopulationComponent();
+  late CityBalanceComponent cityBalanceComponent = CityBalanceComponent();
   late SpriteComponent background;
 
   late OverlayEntry renameOverlay;
@@ -29,36 +31,77 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   Stopwatch autosaveTicker = Stopwatch();
   //final TextEditingController _controller = TextEditingController();
 
+  GameMode gameMode = GameMode.visual;
+
   List<Zone> zones = [];
-  Map demand = <ZoneType, double>{
-    ZoneType.residential:0.0,
-    ZoneType.commercial:0.0,
-    ZoneType.industrial:0.0
-  };
+  List<Zone> inactiveZones = [];
+  Map demand = <ZoneType, double>{};
+  Map zoneDemandBars = <ZoneType, ZoneTypeDemandBar>{};
+  Map ztbButtons = <ZoneType,ZoneTypeButton>{};
+  ZoneType selectedZone = ZoneType.residential; //Default - change later?
+
   final Random rng = Random();
   final double initialZoneRadius = 50;
-  final Vector2 defaultZoneSize = Vector2(150,150);
+  late Vector2 defaultZoneSize;
 
   @override
   Future<void> onLoad() async {
     background = SpriteComponent()
       ..sprite = await Sprite.load('mars_background.jpg');
-    background.size = calculateBackgroundSize(background.sprite!.originalSize);
+    background.size = calculateBackgroundSize(background.sprite!.originalSize) * 2;
     background.anchor = Anchor.center;
     background.position = gameRef.size / 2;
-    add(background);
+    int i = 0;
+    for (ZoneType zt in ZoneType.values) {
+      demand[zt] = 0.0;
+      zoneDemandBars[zt] = ZoneTypeDemandBar(
+        Vector2(gameRef.size.x - 200 - (40 * i), gameRef.size.y - 100), 
+        getBaseColor(zt)
+      );
+      ztbButtons[zt] = ZoneTypeButton(() {
+        selectedZone = zt;
+        for (var ztb in ztbButtons.entries) { //De-select the other buttons
+          if(ztb.key != zt) ztb.value.selected = false;
+        }
+      }
+      , Vector2(50 + (50 * i) as double, gameRef.size.y - 150), getBaseColor(zt));
+      i++;
+    }
     addAll([
-      cityNameComponent,   // Clickable text box for renaming city
-      cityPopulationComponent,   // Non-clickable text box for population
+      background,
+      cityNameComponent,   
+      cityPopulationComponent,
+      cityBalanceComponent,
       BackButton(),
       PauseButton(),
+      ZonePlacementSettingButton(() {
+        gameMode = GameMode.placezone;
+        ztbButtons.forEach((k,v) => add(v));
+        ztbButtons[ZoneType.residential].selected = true;
+      }, Vector2(50, gameRef.size.y - 100)),
+      VisualSettingButton(() {
+        gameMode = GameMode.visual;
+        ztbButtons.forEach((k,v) => remove(v));
+      }, Vector2(100, gameRef.size.y - 100)),
+      ResourceLocatorSettingButton(() {
+        gameMode = GameMode.locateresource;
+        ztbButtons.forEach((k,v) => remove(v));
+      }, Vector2(150, gameRef.size.y - 100)),
     ]);
+    for (ZoneTypeDemandBar ztdb in zoneDemandBars.values) {
+      add(ztdb);
+    }
+    defaultZoneSize = Vector2(gameRef.size.length / 13, gameRef.size.length / 13);
+    
     final gameData = await loadGameData();
     if (gameData != null) {
       setGameFromData(gameData);
     } else {  //Loading game for the first time
       _initializeZones();
     }
+    //_initializeZones();
+    //await FlameAudio.audioCache.load('bgMusic1.mp3');
+    //FlameAudio.bgm.play('bgMusic.mp3');
     elapsedTime.start();
     autosaveTicker.start();
   }
@@ -113,7 +156,7 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   @override
   void update(double dt) {
     super.update(dt);
-    if (autosaveTicker.elapsed.inSeconds >= 5) {
+    if (autosaveTicker.elapsed.inSeconds >= 5000) {
       print("5 seconds have passed, autosaving (change to every 5 mins)");
       saveData();
       autosaveTicker.reset();
@@ -125,8 +168,10 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
 
     //Adjust demand for each zone type
     for (ZoneType ztd in demand.keys) {
-      demand[ztd] += rng.nextDouble() * dt * 0.002;
+      demand[ztd] += rng.nextDouble() * dt * 0.02;
       demand[ztd] = demand[ztd].clamp(0.0, 1.0);
+      zoneDemandBars[ztd].adjustHeight(demand[ztd]);
+      /*
       if (rng.nextDouble() < demand[ztd]) {
         var zoneTypeList = getZonesType(ztd);
         zoneTypeList = zoneTypeList.where((zone) => zone.zoneSlots.isNotEmpty).toList(); //Only include zones with available spots
@@ -142,24 +187,75 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
           add(newZone);
         }
         demand[ztd] = 0.0;
+        
       }
+      */
     }
     
-    //Increase population of each zone based on building population growth
-    for (var zone in zones) {
-      for (var building in zone.buildings){
-        if (building.popIncrease > 0) {
-          cityPopulationComponent.population += building.popIncrease;
-          //print("Increased pop by ${building.popIncrease}");
-          building.popIncrease = 0;
+    for (var zone in inactiveZones) {
+      //An inactive zone was activated
+      if (zone.active) {
+        zone.type = selectedZone;
+        zone.baseColor = getBaseColor(zone.type);
+        inactiveZones.remove(zone);
+        zones.add(zone);
+        //Demand = 0: Full price  Demand = 1: 50% price
+        //cityBalanceComponent.balance -= (zone.cost * (1 - (demand[zone.type] * 0.5))) as int;
+        if (zone.cost <= cityBalanceComponent.balance) {
+          cityBalanceComponent.balance -= zone.cost;
+          demand[zone.type] = 0;
+          for (Vector2 zonePos in getAdjacentPosition(zone.position, zone.size)) {
+            Zone newInactiveZone = Zone(ZoneType.residential, zonePos, defaultZoneSize);
+            inactiveZones.add(newInactiveZone);
+            add(newInactiveZone);
+          }
         }
+        else zone.active = false;
+      }
+      else {
+        if (gameMode == GameMode.placezone && !zone.visible) zone.visible = true;
+        else if (gameMode != GameMode.placezone && zone.visible) zone.visible = false;
+      }
+    }
+
+    //Increase population of each zone based on building population growth
+    cityPopulationComponent.population = 0;
+    for (var zone in zones) {
+      //Change later to be in render()
+      if (gameMode == GameMode.placezone && !zone.visible) {
+        zone.visible = true;
+      }
+      else if (gameMode != GameMode.placezone && zone.visible) {
+        zone.visible = false;
+      }
+      if (zone.active) {
+        for (var building in zone.buildings){
+          cityPopulationComponent.population += building.population;
+          /*
+          if (building.popIncrease > 0) {
+            cityPopulationComponent.population += building.popIncrease;
+            building.popIncrease = 0;
+          }
+          */
+        } 
       }
     }
   }
 
   void _initializeZones() {
     final center = gameRef.size / 2;
-
+    Vector2 position = center + getRandomOffset(initialZoneRadius);
+    Zone newZone = Zone(ZoneType.residential, position, defaultZoneSize); //Default residential - need to change
+    newZone.active = true;  //First zone comes ready to go, others need to be manually initialized
+    zones.add(newZone);
+    add(newZone);
+    //Add inactive zones all around initial zone that can be activated
+    for (Vector2 zonePos in getAdjacentPosition(newZone.position, newZone.size)) {
+      Zone newInactiveZone = Zone(ZoneType.residential, zonePos, defaultZoneSize);
+      inactiveZones.add(newInactiveZone);
+      add(newInactiveZone);
+    }
+    /*
     for (var zoneType in ZoneType.values) {
       Vector2 position;
       if (zones.isEmpty){
@@ -174,6 +270,20 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
       zones.add(newZone);
       add(newZone); 
     }
+    */
+  }
+
+   Color getBaseColor(ZoneType type) {
+    switch (type) {
+      case ZoneType.residential:
+        return Colors.green;
+      case ZoneType.research:
+        return Colors.blue;
+      case ZoneType.mining:
+        return Colors.yellow;
+      case ZoneType.recreation:
+        return Colors.purple;
+    }
   }
 
   Vector2 getRandomOffset(double radius) {
@@ -183,8 +293,16 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
     return Vector2(cos(angle) * distance, sin(angle) * distance);
   }
 
+  //Probably a better way to do this ...
   bool isOverlapping(Vector2 position) {
+    //Check overlap with all active zones
     for (var zone in zones) {
+      if (zone.isOverlapping(position, zone.size)) {
+        return true;
+      }
+    }
+    //Check overlap with all inactive zones
+    for (var zone in inactiveZones) {
       if (zone.isOverlapping(position, zone.size)) {
         return true;
       }
@@ -192,8 +310,8 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
     return false;
   }
   
-  Vector2 getAdjacentPosition(Vector2 existingPosition, Vector2 size) {
-    final rng = Random();
+  List<Vector2> getAdjacentPosition(Vector2 existingPosition, Vector2 size) {
+    //final rng = Random();
     List<Vector2> options = [];
     options.addAll([
       existingPosition + Vector2(0, - size.y),
@@ -207,7 +325,7 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
       }
     }
     if (options.isNotEmpty) {
-      return options[rng.nextInt(options.length)];
+      return options;
     } else {
       throw Exception("Failed to find adjacent zone placement");
     }
@@ -225,6 +343,7 @@ class MainGameScreen extends Component with HasGameRef<PlanetCityBuilder>{
   Future<void> saveData() async {
     final file = await _getGameDataFile();
     String jsonData = jsonEncode(getSaveState());
+    jsonData = base64.encode(utf8.encode(jsonData));
     await file.writeAsString(jsonData);
   }
 
@@ -257,7 +376,7 @@ Functionality will likely change, which means save data changes too.
     for (final zone in gameData['zones']) {
       Zone newZone = Zone(zone['type'], zone['position'], zone['size']);
       for (final building in zone['buildings']) {
-        Building newBuilding = Building(building['position']);
+        Building newBuilding = Building()..position = building['position'];
         newBuilding.population = building['population'];
         cityPopulationComponent.population += newBuilding.population;
         newZone.add(newBuilding);
@@ -271,6 +390,7 @@ Functionality will likely change, which means save data changes too.
       final file = await _getGameDataFile();
       if (await file.exists()) {
         String jsonData = await file.readAsString();
+        jsonData = utf8.decode(base64.decode(jsonData));
         return jsonDecode(jsonData);
       }
     } catch (e) {
@@ -280,121 +400,46 @@ Functionality will likely change, which means save data changes too.
   }
 }
 
+class ZoneTypeButton extends RectangleComponent with TapCallbacks {
+  ZoneTypeButton(this.onTapCallback, pos, Color color) : super(
+    position: pos,
+    size: Vector2(40,40),
+    paint: Paint()..color = color
+  );
 
-//City Name Textbox
-class CityNameComponent extends PositionComponent with TapCallbacks, HasGameRef<PlanetCityBuilder> {
-  CityNameComponent() {
-   _textComponent = TextComponent(
-      text: cityName,
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          fontSize: 24,
-          fontFamily: "GameOfSquids",
-          color: Colors.black,
-        ),
-      ),
-      anchor: Anchor.center,
-    );
-    add(_textComponent);
-  }
-
-  String cityName = 'Capitol City';
-  late TextComponent _textComponent;
-
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    position = Vector2(size.x / 2, size.y - 100); // Bottom center position
-  }
+  final VoidCallback onTapCallback;
+  bool selected = false;
+  Paint selectedBorder = Paint()
+    ..color = Colors.white
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3;
 
   @override
   void onTapUp(TapUpEvent event) {
-    _showRenameDialog();
+    onTapCallback();
+    selected = !selected;
   }
 
-  void _showRenameDialog() {
-    return;
-    /*
-    final overlay = OverlayEntry(
-      builder: (context) {
-        String newCityName = cityName;
-
-        return Center(
-          child: Material(
-            color: Colors.black54,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    decoration: InputDecoration(hintText: 'Enter new city name'),
-                    onChanged: (value) => newCityName = value,
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          cityName = newCityName;
-                          _textComponent.text = cityName;
-                          Overlay.of(context).remove(overlay);
-                        },
-                        child: Text('Submit'),
-                      ),
-                      SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          Overlay.of(context).remove(overlay);
-                        },
-                        child: Text('Cancel'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    // Insert the overlay into the widget tree
-    Overlay.of(context).insert(overlay);
-    */
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    if (selected) {
+      canvas.drawRect(size.toRect(), selectedBorder);
+    }
   }
 }
 
-class CityPopulationComponent extends TextComponent {
-  CityPopulationComponent({int initialPopulation = 0})
-      : population = initialPopulation,
-        super(
-          text: 'Population: $initialPopulation',
-          textRenderer: TextPaint(
-            style: const TextStyle(
-              fontSize: 20,
-              fontFamily: "GameOfSquids",
-              color: Colors.black54,
-            ),
-          ),
-          anchor: Anchor.center,
-        );
+class ZoneTypeDemandBar extends RectangleComponent {
+  ZoneTypeDemandBar(Vector2 pos, Color color) : super(
+    anchor: Anchor.topCenter, 
+    position: pos,
+    size: Vector2(20,80),
+    paint: Paint()..color = color
+  );
 
-  int population;
-
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    position = Vector2(size.x / 2, size.y - 50);  
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-    if (text != 'Population: $population') {
-      text = 'Population: $population';
-    }
+  //Demand is a number between 0.0 and 1.0
+  void adjustHeight(double demand) {
+    size = Vector2(20, 80 * demand);
   }
 }
 
@@ -436,6 +481,52 @@ abstract class SimpleButton extends PositionComponent with TapCallbacks {
   void onTapCancel(TapCancelEvent event) {
     _iconPaint.color = const Color(0xffaaaaaa);
   }
+}
+
+class ZonePlacementSettingButton extends SimpleButton{
+  ZonePlacementSettingButton(this.onTapCallback, Vector2 pos) : super(
+    Path()
+      ..moveTo(10,10)
+      ..lineTo(30, 10)
+      ..lineTo(10, 30)
+      ..lineTo(30, 30),
+      position: pos,
+  );
+
+  final VoidCallback onTapCallback;
+
+  @override
+  void action() => onTapCallback();
+}
+
+class VisualSettingButton extends SimpleButton{
+  VisualSettingButton(this.onTapCallback, Vector2 pos) : super(
+    Path()
+      ..moveTo(10, 10)
+      ..lineTo(20, 30)
+      ..lineTo(30, 10),
+      position: pos,
+  );
+
+  final VoidCallback onTapCallback;
+
+  @override
+  void action() => onTapCallback();
+}
+
+class ResourceLocatorSettingButton extends SimpleButton{
+  ResourceLocatorSettingButton(this.onTapCallback, Vector2 pos) : super(
+    Path()
+      ..moveTo(15, 10)
+      ..lineTo(15, 30)
+      ..lineTo(25, 30),
+      position: pos,
+  );
+
+  final VoidCallback onTapCallback;
+
+  @override
+  void action() => onTapCallback();
 }
 
 class BackButton extends SimpleButton with HasGameReference<PlanetCityBuilder> {

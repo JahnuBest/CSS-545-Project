@@ -1,31 +1,48 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Route;
 import 'package:planet_city_builder/main.dart';
-import 'package:flame/components.dart';
-import 'package:flutter/gestures.dart';
 
-class PlanetSelectScreen extends Component with HasGameRef<PlanetCityBuilder> {
+class PlanetSelectScreen extends Component with HasGameRef<PlanetCityBuilder>, DragCallbacks, TapCallbacks {
   int currentPlanetIndex = 0;
-  late SpriteComponent background;
-  List<SpriteComponent> planets = [];
+  late SpriteComponent background = SpriteComponent();
+  List<Planet> planets = [];
+  late Planet focusedPlanet;
+  TextComponent planetName = TextComponent(
+    anchor: Anchor.center,
+    textRenderer: TextPaint(
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 50,
+          fontWeight: FontWeight.bold,
+          fontFamily: "GameOfSquids"
+        )
+      )
+  );
+  TextComponent planetInfo = TextComponent(
+    anchor: Anchor.center,
+    text: "",
+    textRenderer: TextPaint(
+        style: const TextStyle(
+          color: Colors.grey,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          fontFamily: "GameOfSquids"
+        )
+      )
+  );
+  bool isDragging = false;
   late Vector2 centerPosition; // Centered position for focused planet
   Offset offset = Offset.zero;
-
-  //PlanetSelectScreen() : centerPosition = Vector2(300, 400);
   
   //centerPosition = Vector2(gameRef.size.x / 2, gameRef.size.y); 
 
   @override
   Future<void> onLoad() async {
     centerPosition = gameRef.size / 2;
-    background = SpriteComponent()
-      ..sprite = await Sprite.load('stars.jpg');
-
-    background.size = calcSpriteSize(background.sprite!.originalSize, 1);
-    background.anchor = Anchor.center;
-    background.position = centerPosition;
+    background.sprite = await Sprite.load('stars.jpg');
     add(background);
+    add(planetName);
     /*
     planets = [
       Planet(imagePath: 'mars_planet.png', position: Vector2(100, centerPosition.y)),
@@ -37,14 +54,41 @@ class PlanetSelectScreen extends Component with HasGameRef<PlanetCityBuilder> {
     }
     */
     planets = [
-      SpriteComponent()..sprite = await Sprite.load('mars_planet.png')
+      //Planet(imagePath: "mars_planet_png", name: "Mars", position: centerPosition)
+      //..sprite = await Sprite.load("mars_planet.png")
+      //SpriteComponent()..sprite = await Sprite.load("mars_planet.png")
+      Planet(centerPosition, 0.75, "Mars", {
+        "Resources": "Plenty",
+        "Temperature": "Hot",
+        "Gravity": "Low",
+      })..sprite = await Sprite.load("mars_planet.png"),
+      Planet(Vector2(centerPosition.x + 500, centerPosition.y), 0.5, "Ice Planet",
+      {
+        "Resources": "Plenty",
+        "Temperature": "Hot",
+        "Gravity": "Low",
+      })..sprite = await Sprite.load("ice_planet.png"),
+      Planet(Vector2(centerPosition.x + 1000, centerPosition.y), 0.5, "Fire Planet",
+      {
+        "Resources": "Plenty",
+        "Temperature": "Hot",
+        "Gravity": "Low",
+      })..sprite = await Sprite.load("fire_planet.png")
+      //  ..position = Vector2(centerPosition.x + 500, centerPosition.y)
+      //..size = Vector2(gameRef.size.y * 0.5, gameRef.size.y * 0.5)
     ];
-    for (SpriteComponent planet in planets) {
-      planet.size = calcSpriteSize(planet.sprite!.originalSize, 0.5);
-      planet.anchor = Anchor.center;
-      planet.position = centerPosition;
+    focusedPlanet = planets[0];
+    focusedPlanet.isFocused = true;
+    planetName.text = focusedPlanet.name;
+    for (var entry in focusedPlanet.planetInfo.entries) {
+        planetInfo.text += "${entry.key}: ${entry.value}\n";
+    }
+    planetInfo.position = Vector2(centerPosition.x, gameRef.size.y - 300);
+    add(planetInfo);
+    for (SpriteComponent planet in planets) {      
       add(planet);
     }
+    
     
     //_updateFocus();
 /*
@@ -65,6 +109,57 @@ class PlanetSelectScreen extends Component with HasGameRef<PlanetCityBuilder> {
     ));
   */
   }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    planetName.position = Vector2(gameRef.size.x / 2, 100);
+    planetInfo.position = Vector2(centerPosition.x, gameRef.size.y - 100);
+    //background.size = gameRef.size * 1.5;
+    //background.anchor = Anchor.center;
+    //background.position = centerPosition;
+    //focusedPlanet.size = calcSpriteSize(focusedPlanet.sprite!.originalSize, 0.5);
+    //focusedPlanet.anchor = Anchor.center;
+    //focusedPlanet.position = centerPosition;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    if (planetName.text != focusedPlanet.name) {
+      planetName.text = focusedPlanet.name;
+    }
+    for (Planet planet in planets) {
+      if (planet != focusedPlanet) {
+        planet.position.x += focusedPlanet.offset;
+      }
+    }
+    background.position.x += focusedPlanet.offset * 0.1;
+    if (!focusedPlanet.isFocused) {
+      //New planet to focus
+      if (focusedPlanet.position.x - centerPosition.x > 0){
+        focusedPlanet = planets[planets.indexOf(focusedPlanet) - 1]; // THIS WON'T WORK IF FOCUSED PLANET IS FIRST IN LIST
+      } else {
+        focusedPlanet = planets[planets.indexOf(focusedPlanet) + 1]; // THIS WON'T WORK IF FOCUSED PLANET IS LAST IN LIST
+      }
+      focusedPlanet.position = centerPosition;
+      focusedPlanet.scale = Vector2(0.75, 0.75);
+      focusedPlanet.isFocused = true;
+      planetInfo.text = "";
+      for (var entry in focusedPlanet.planetInfo.entries) {
+        planetInfo.text += "${entry.key}: ${entry.value}\n";
+      }
+    }
+  }
+
+  
+
+/*
+@override
+void onTapUp(TapUpEvent event) {
+  if (event.localPosition )
+}
+  */
 /*
   void onSwipeLeft() {
     if (currentPlanetIndex < planets.length - 1) {
@@ -116,47 +211,109 @@ class PlanetSelectScreen extends Component with HasGameRef<PlanetCityBuilder> {
   }
   */
 }
-/*
-class Planet extends SpriteComponent with HasGameRef<PlanetCityBuilder>, TapCallbacks{
-  final String imagePath;
-  bool isFocused = false;
 
-  Planet({required this.imagePath, required Vector2 position}) {
-    this.position = position;
-    size = Vector2(400,300);
+class Planet extends SpriteComponent with HasGameRef<PlanetCityBuilder>, DragCallbacks, TapCallbacks {
+  late TextComponent nameText;
+  bool isFocused = false;
+  bool isDragging = false;
+  String name = "";
+  double offset = 0.0;
+  Map planetInfo = <String, String>{};
+
+  Planet(Vector2 pos, double s, String n, Map<String, String> pi) : super() {
+    scale = Vector2(s, s);
+    position = pos;
+    anchor = Anchor.center;
+    name = n;
+    planetInfo = pi;
   }
+/*
+  Planet({required this.imagePath, required String name, required Vector2 position}) {
+    this.position = position;
+    nameText = TextComponent(
+      position: Vector2(position.x, 50),
+      text: name,
+      textRenderer: TextPaint(
+            style: const TextStyle(
+              fontSize: 30,
+              fontFamily: "GameOfSquids",
+              color: Colors.white,
+            ),
+          ),
+    );
+  }
+*/
 
   @override
   Future<void> onLoad() async {
-    sprite = await Sprite.load(imagePath);
-    sprite.srcSize = gameRef.size / 2;
+    size = calcSpriteSize(sprite!.originalSize, scale);
+    //position = gameRef.size / 2;
+    //add(nameText);
   }
-/*
-  @override
-  void render(Canvas canvas) {
-    final targetHeight = gameRef.size.y / 2;
   
-    final scale = isFocused ? (targetHeight / sprite.srcSize.y) * 1.2 : targetHeight / sprite.srcSize.y;
-    final scaledSize = Vector2(sprite.srcSize.x * scale, targetHeight / sprite.srcSize.y);
 
-    final offsetPosition = offset + Offset(scaledSize.x / 2, scaledSize.y / 2);
-
-    // Draw the scaled sprite at the centered position
-    sprite.render(
-      canvas,
-      Rect.fromCenter(center: center, width: width, height: height)
-      center: Vector2(offsetPosition),
-      size: scaledSize,
-      //Rect.fromLTWH(offsetPosition.dx, offsetPosition.dy, scaledSize.x, scaledSize.y),
-    );
+  @override
+  void onDragStart(DragStartEvent event){
+    super.onDragStart(event);
+    if (isFocused) {
+      isDragging = true;
+      scale = Vector2(0.8,0.8);
+    }
+    //size = calcSpriteSize(sprite!.originalSize, scale);
   }
-  */
+
+  @override
+  void onDragUpdate(DragUpdateEvent event){
+    super.onDragUpdate(event);
+    if (isDragging){
+      position.x += event.localDelta.x;
+      offset = event.localDelta.x;
+    }
+  }
+
+  @override
+  void onDragEnd(DragEndEvent event){
+    super.onDragEnd(event);
+    isDragging = false;
+    offset = 0;
+    if (((gameRef.size.x / 2) - position.x).abs() > (400 * (gameRef.size.y / 1920))) {
+      if ((gameRef.size.x / 2) - position.x > 0){
+        position.x = 200;
+      } else {
+        position.x = gameRef.size.x - 200;
+      }
+      scale = Vector2(0.25,0.25);
+      isFocused = false;
+      //size = calcSpriteSize(sprite!.originalSize, s);
+    }
+    else {
+      position = gameRef.size / 2;
+      scale = Vector2(0.75,0.75);
+      //size = calcSpriteSize(sprite!.originalSize, s);
+    }
+    
+  }
 
   @override
   void onTapUp(TapUpEvent event) {
+    super.onTapUp(event);
+    scale = Vector2(0.75,0.75);
     game.router.pushNamed('maingame');
   }
-}
 
-// Wrap PlanetSelectScreen with GestureDetector in your game widget to handle gestures
-*/
+   @override
+  void onTapDown(TapDownEvent event) {
+    super.onTapDown(event);
+    scale = Vector2(0.6,0.6);
+  }
+
+  Vector2 calcSpriteSize(Vector2 originalSize, Vector2 scale) {
+    final screenAspectRatio = gameRef.size.x / gameRef.size.y;
+    final imageAspectRatio = originalSize.x / originalSize.y;
+    if (screenAspectRatio > imageAspectRatio) {
+      return Vector2(gameRef.size.x * scale.x, (gameRef.size.x / imageAspectRatio) * scale.y);
+    } else {
+      return Vector2((gameRef.size.y * imageAspectRatio) * scale.x, gameRef.size.y * scale.y);
+    }
+  }
+}

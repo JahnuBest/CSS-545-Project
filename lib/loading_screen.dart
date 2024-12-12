@@ -1,6 +1,5 @@
-import 'package:planet_city_builder/game_screen.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:planet_city_builder/main.dart';
-import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:flame/palette.dart';
@@ -24,8 +23,11 @@ class LoadingScreen extends Component with HasGameRef<PlanetCityBuilder>{
     background.position = gameRef.size / 2;
     add(background);
 
+    final packageInfo = await PackageInfo.fromPlatform();
+    final version = packageInfo.version;
+
     titleText = TextComponent(
-      text: "Planet City Builder 0.1.0",
+      text: "Planet City Builder $version",
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Colors.white,

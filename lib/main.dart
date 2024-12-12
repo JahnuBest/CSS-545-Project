@@ -3,6 +3,7 @@ import 'package:planet_city_builder/game_screen.dart';
 import 'package:planet_city_builder/planet_select_screen.dart';
 import 'package:flutter/material.dart' hide Route;
 import 'package:flame/game.dart';
+import 'package:flutter/services.dart';
 //import 'package:flame/components.dart';
 //import 'package:flame/events.dart';
 //import 'package:flame/geometry.dart';
@@ -10,6 +11,8 @@ import 'package:flame/game.dart';
 //import 'package:flame/widgets.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
   runApp(GameWidget(game: PlanetCityBuilder()));
 }
 
