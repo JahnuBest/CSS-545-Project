@@ -13,10 +13,8 @@ class Building extends PositionComponent{
 
   Paint paint = Paint()..color = Colors.black;
 
-  Building(Vector2 position) {
+  Building() {
     size = boxSize;
-    anchor = Anchor.center;
-    this.position = position;
     //print("Adding a building at position (${position.x}, ${position.y})");
   }
 

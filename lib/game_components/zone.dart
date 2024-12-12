@@ -22,7 +22,7 @@ class Zone extends PositionComponent with TapCallbacks {
     "Oil":0,
     "Uranium":0
   };
-  double cost = 1000000;
+  int cost = 1000000;
 
   //double demand = 0.0;
   final Random rng = Random();
@@ -109,7 +109,8 @@ class Zone extends PositionComponent with TapCallbacks {
     ..strokeWidth = 3;
 
   void generateBuildings() {
-    buildings.add(Building(zoneSlots.removeAt(rng.nextInt(zoneSlots.length))));
+    buildings.add(Building()
+    ..position = zoneSlots.removeAt(rng.nextInt(zoneSlots.length)));
     //demand = 0.01;
     _zoneCount.text = buildings.length.toString();
     //print("There are now ${buildings.length} buildings in the $type zone and ${zoneSlots.length} zone slots left");

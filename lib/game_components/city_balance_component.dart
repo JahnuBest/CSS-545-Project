@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class CityBalanceComponent extends TextComponent {
-  CityBalanceComponent({int initialBalance = 123456789})
+  CityBalanceComponent({int initialBalance = 12345678})
       : balance = initialBalance,
         super(
           text: '\$$initialBalance',

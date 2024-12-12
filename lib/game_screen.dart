@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:convert';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flame/events.dart';
 import 'package:flame/rendering.dart';
@@ -91,12 +92,14 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
       add(ztdb);
     }
     defaultZoneSize = Vector2(gameRef.size.length / 13, gameRef.size.length / 13);
+    
     final gameData = await loadGameData();
     if (gameData != null) {
       setGameFromData(gameData);
     } else {  //Loading game for the first time
       _initializeZones();
     }
+    //_initializeZones();
     //await FlameAudio.audioCache.load('bgMusic1.mp3');
     //FlameAudio.bgm.play('bgMusic.mp3');
     elapsedTime.start();
@@ -197,13 +200,17 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
         inactiveZones.remove(zone);
         zones.add(zone);
         //Demand = 0: Full price  Demand = 1: 50% price
-        cityBalanceComponent.balance -= (zone.cost * (1 - (demand[zone.type] * 0.5))) as int;
-        demand[zone.type] = 0;
-        for (Vector2 zonePos in getAdjacentPosition(zone.position, zone.size)) {
-          Zone newInactiveZone = Zone(ZoneType.residential, zonePos, defaultZoneSize);
-          inactiveZones.add(newInactiveZone);
-          add(newInactiveZone);
+        //cityBalanceComponent.balance -= (zone.cost * (1 - (demand[zone.type] * 0.5))) as int;
+        if (zone.cost <= cityBalanceComponent.balance) {
+          cityBalanceComponent.balance -= zone.cost;
+          demand[zone.type] = 0;
+          for (Vector2 zonePos in getAdjacentPosition(zone.position, zone.size)) {
+            Zone newInactiveZone = Zone(ZoneType.residential, zonePos, defaultZoneSize);
+            inactiveZones.add(newInactiveZone);
+            add(newInactiveZone);
+          }
         }
+        else zone.active = false;
       }
       else {
         if (gameMode == GameMode.placezone && !zone.visible) zone.visible = true;
@@ -238,7 +245,7 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
   void _initializeZones() {
     final center = gameRef.size / 2;
     Vector2 position = center + getRandomOffset(initialZoneRadius);
-    Zone newZone = Zone(ZoneType.residential, position, defaultZoneSize);
+    Zone newZone = Zone(ZoneType.residential, position, defaultZoneSize); //Default residential - need to change
     newZone.active = true;  //First zone comes ready to go, others need to be manually initialized
     zones.add(newZone);
     add(newZone);
@@ -336,6 +343,7 @@ class MainGameScreen extends Component with TapCallbacks, HasGameRef<PlanetCityB
   Future<void> saveData() async {
     final file = await _getGameDataFile();
     String jsonData = jsonEncode(getSaveState());
+    jsonData = base64.encode(utf8.encode(jsonData));
     await file.writeAsString(jsonData);
   }
 
@@ -368,7 +376,7 @@ Functionality will likely change, which means save data changes too.
     for (final zone in gameData['zones']) {
       Zone newZone = Zone(zone['type'], zone['position'], zone['size']);
       for (final building in zone['buildings']) {
-        Building newBuilding = Building(building['position']);
+        Building newBuilding = Building()..position = building['position'];
         newBuilding.population = building['population'];
         cityPopulationComponent.population += newBuilding.population;
         newZone.add(newBuilding);
@@ -382,6 +390,7 @@ Functionality will likely change, which means save data changes too.
       final file = await _getGameDataFile();
       if (await file.exists()) {
         String jsonData = await file.readAsString();
+        jsonData = utf8.decode(base64.decode(jsonData));
         return jsonDecode(jsonData);
       }
     } catch (e) {
